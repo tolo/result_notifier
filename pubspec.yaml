@@ -1,7 +1,7 @@
 name: result_notifier
-description: “Solid state management, without the magic”
+description: “Pragmatic state management for Flutter, without the magic”
 version: 0.1.0
-homepage:
+homepage: https://github.com/tolo/result_notifier
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -10,6 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  meta: ^1.10.0
 
 dev_dependencies:
   flutter_test:
