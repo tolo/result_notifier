@@ -119,10 +119,10 @@ sealed class Result<T> {
     X Function(T?)? cancelled,
   }) {
     return switch (this) {
-      Data(data: var d) => data(d),
-      Error(error: var e, stackTrace: var st, data: var d) =>
+      Data(data: final d) => data(d),
+      Error(error: final e, stackTrace: final st, data: final d) =>
         (cancelled != null && isCancelled) ? cancelled(d) : error(e, st, d),
-      Loading(data: var d) => loading(d),
+      Loading(data: final d) => loading(d),
     };
   }
 
@@ -136,10 +136,10 @@ sealed class Result<T> {
     X Function(T?)? cancelled,
   }) {
     return switch (this) {
-      Data(data: var v) => data?.call(v),
-      Error(error: var e, stackTrace: var st, data: var d) =>
+      Data(data: final v) => data?.call(v),
+      Error(error: final e, stackTrace: final st, data: final d) =>
         (cancelled != null && isCancelled) ? cancelled(d) : error?.call(e, st, d),
-      Loading(data: var v) => loading?.call(v),
+      Loading(data: final v) => loading?.call(v),
     };
   }
 
@@ -166,9 +166,6 @@ sealed class Result<T> {
 
   @override
   int get hashCode => Object.hash(runtimeType, data, error, lastUpdate);
-
-  @override
-  String toString() => '$runtimeType<$T>(data: $data, lastUpdate: $lastUpdate)';
 }
 
 /// Initial loading/empty state. Inherits from [Loading] and is handled as such in most cases.
@@ -178,6 +175,9 @@ final class Initial<T> extends Loading<T> {
   @override
   Result<T> copyWith({T? data, DateTime? lastUpdate}) =>
       Initial(data: data ?? this.data, lastUpdate: lastUpdate ?? this.lastUpdate);
+
+  @override
+  String toString() => 'Initial<$T>(data: $data, lastUpdate: $lastUpdate)';
 }
 
 /// Loading
@@ -190,6 +190,9 @@ final class Loading<T> extends Result<T> {
   @override
   Result<T> copyWith({T? data, DateTime? lastUpdate}) =>
       Loading(data: data ?? this.data, lastUpdate: lastUpdate ?? this.lastUpdate);
+
+  @override
+  String toString() => 'Loading<$T>(data: $data, lastUpdate: $lastUpdate)';
 }
 
 /// Data
@@ -207,11 +210,13 @@ final class Data<T> extends Result<T> {
   @override
   Result<T> copyWith({T? data, DateTime? lastUpdate}) =>
       Data(data ?? this.data, lastUpdate: lastUpdate ?? this.lastUpdate);
+
+  @override
+  String toString() => 'Data<$T>(data: $data, lastUpdate: $lastUpdate)';
 }
 
 /// Error
 final class Error<T> extends Result<T> {
-  Error._({required this.error, required this.isCancelled, this.stackTrace, this.data, super.lastUpdate}) : super._();
   Error({required this.error, this.stackTrace, this.data, super.lastUpdate})
       : isCancelled = false,
         super._();
@@ -219,6 +224,7 @@ final class Error<T> extends Result<T> {
       : this._(error: NoDataException(), isCancelled: false, data: data, lastUpdate: lastUpdate);
   Error.cancelled({T? data, DateTime? lastUpdate})
       : this._(error: CancelledException(), isCancelled: true, data: data, lastUpdate: lastUpdate);
+  Error._({required this.error, required this.isCancelled, this.stackTrace, this.data, super.lastUpdate}) : super._();
 
   @override
   final Object error;
@@ -230,11 +236,12 @@ final class Error<T> extends Result<T> {
 
   @override
   Result<T> copyWith({T? data, DateTime? lastUpdate}) => Error._(
-      error: error,
-      stackTrace: stackTrace,
-      data: data ?? this.data,
-      lastUpdate: lastUpdate ?? this.lastUpdate,
-      isCancelled: isCancelled);
+        error: error,
+        stackTrace: stackTrace,
+        data: data ?? this.data,
+        lastUpdate: lastUpdate ?? this.lastUpdate,
+        isCancelled: isCancelled,
+      );
 
   @override
   bool operator ==(Object other) {
@@ -245,7 +252,7 @@ final class Error<T> extends Result<T> {
   int get hashCode => Object.hash(super.hashCode, stackTrace, isCancelled);
 
   @override
-  String toString() => '$runtimeType<$T>(error: $error, stackTrack: $stackTrace, data: $data, lastUpdate: $lastUpdate)';
+  String toString() => 'Error<$T>(error: $error, stackTrack: $stackTrace, data: $data, lastUpdate: $lastUpdate)';
 }
 
 final DateTime _staleDateTime = DateTime.fromMillisecondsSinceEpoch(0);

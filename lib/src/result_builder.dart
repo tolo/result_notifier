@@ -155,9 +155,12 @@ typedef ResourceWidgetBuilder<T> = Widget Function(BuildContext context, T);
 class ResourceProvider<T> extends StatefulWidget {
   /// Creates a ResourceProvider with optional callbacks for creating and disposing the resource as well as building a
   /// Widget using the resource.
-  const ResourceProvider(
-      {super.key, CreateResource<T>? create, DisposeResource<T>? dispose, ResourceWidgetBuilder? builder})
-      : _create = create,
+  const ResourceProvider({
+    super.key,
+    CreateResource<T>? create,
+    DisposeResource<T>? dispose,
+    ResourceWidgetBuilder? builder,
+  })  : _create = create,
         _dispose = dispose,
         _builder = builder,
         super();

@@ -1,3 +1,8 @@
+// Copyright 2024 Tobias Löfstrand. All rights reserved.
+// Use of this source code is governed by a MIT-style license that can be
+// found in the LICENSE file.
+
+/// Pragmatic state management for Flutter, based on familiar and platform-native concepts
 library result_notifier;
 
 export 'src/async_notifier.dart';

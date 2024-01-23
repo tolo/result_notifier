@@ -33,7 +33,7 @@ class CombineLatestNotifier<T, A, B> extends ResultNotifier<T> {
 
   @override
   void dispose() {
-    for (var disposable in _disposables) {
+    for (final disposable in _disposables) {
       disposable();
     }
     super.dispose();

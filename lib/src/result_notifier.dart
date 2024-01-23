@@ -136,9 +136,10 @@ class ResultNotifier<T> extends ValueNotifier<Result<T>> {
   @override
   set value(Result<T> newValue) {
     if (newValue.isError && onErrorReturn != null) {
-      newValue = value.toData(data: onErrorReturn!(newValue.error));
+      super.value = value.toData(data: onErrorReturn!(newValue.error));
+    } else {
+      super.value = newValue;
     }
-    super.value = newValue;
   }
 
   /// Attempts to get the [Result.data] of the current Result [value].
@@ -225,7 +226,7 @@ class ResultNotifier<T> extends ValueNotifier<Result<T>> {
   void addListener(VoidCallback listener) {
     super.addListener(listener);
     Future.microtask(() {
-      if (_active && isInitial) refresh(force: false, alwaysTouch: false);
+      if (_active && isInitial) refresh();
     });
   }
 

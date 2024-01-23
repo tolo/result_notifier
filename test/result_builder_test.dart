@@ -18,14 +18,15 @@ void main() {
 
     testWidgets('ResultBuilder.result throws if all builders and catch-all', (tester) async {
       expect(
-          () => ResultBuilder.result(
-                ResultNotifier<String>(data: 'Data'),
-                onData: (_, d) => Text(d),
-                onLoading: (_, d) => Text('Loading - $d'),
-                onError: (_, e, st, d) => Text('Error - $d - $e'),
-                onResult: (_, r) => Text(r.toString()),
-              ),
-          throwsAssertionError);
+        () => ResultBuilder.result(
+          ResultNotifier<String>(data: 'Data'),
+          onData: (_, d) => Text(d),
+          onLoading: (_, d) => Text('Loading - $d'),
+          onError: (_, e, st, d) => Text('Error - $d - $e'),
+          onResult: (_, r) => Text(r.toString()),
+        ),
+        throwsAssertionError,
+      );
     });
   });
 
@@ -84,7 +85,8 @@ void main() {
         home: ResultBuilder.result(
           notifier,
           onData: (context, data) => Text(data),
-          onResult: (context, result) => Text('Catch-all - data: ${result.data} - loading: ${result.isLoading} - error: ${result.error}'),
+          onResult: (context, result) =>
+              Text('Catch-all - data: ${result.data} - loading: ${result.isLoading} - error: ${result.error}'),
         ),
       );
 
@@ -135,10 +137,7 @@ void main() {
 
       final app = MaterialApp(
         home: ResultNotifierProvider(
-          create: (context) {
-            notifier = ResultNotifier<String>(data: 'Data');
-            return notifier;
-          },
+          create: (context) => notifier = ResultNotifier<String>(data: 'Data'),
           resultBuilder: (context, notifier, result) => result.when(
             data: (data) => Text(data),
             error: (error, stackTrace, data) => Text('Error - $data - $error'),

@@ -13,7 +13,8 @@ void main() => runApp(const ResultNotifierBuilderApp());
 class ResultNotifierBuilderApp extends StatelessWidget {
   const ResultNotifierBuilderApp({super.key});
 
-  @override Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     return const MaterialApp(
       title: 'ResultNotifierBuilderApp',
       home: RepositoryProvider(),
@@ -72,7 +73,8 @@ class ActivityPage extends StatelessWidget {
   final ResultNotifier<String> activityRepository;
   final Result<String> activity;
 
-  @override Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
           title: Text('Activity suggestion (${activity.lastUpdate})'),
@@ -91,7 +93,6 @@ class ActivityPage extends StatelessWidget {
           onPressed: () => activityRepository.refresh(),
           icon: const Icon(Icons.refresh),
           label: const Text('New activity suggestion'),
-        )
-    );
+        ));
   }
 }

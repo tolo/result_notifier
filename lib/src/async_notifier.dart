@@ -162,20 +162,23 @@ class StreamNotifier<T> extends ResultNotifier<T> {
 
   void _performFetch(FetchResultStream<T> fetch) {
     _subscription?.cancel();
-    late final StreamSubscription<Result<T>> sub;
-    sub = fetch(this).listen((data) {
-      if (sub == _subscription) setResultAsyncIgnore(() => data);
-    }, onError: (error, stackTrace) {
-      if (sub == _subscription) {
-        setResultAsyncIgnore(() => Future<Result<T>>.error(error ?? NoDataException(), stackTrace));
-      }
-    });
+    late final StreamSubscription<Result<T>> sub; // ignore: cancel_subscriptions
+    sub = fetch(this).listen(
+      (data) {
+        if (sub == _subscription) setResultAsyncIgnore(() => data);
+      },
+      onError: (Object error, StackTrace stackTrace) {
+        if (sub == _subscription) {
+          setResultAsyncIgnore(() => Future<Result<T>>.error(error, stackTrace));
+        }
+      },
+    );
     _subscription = sub;
   }
 }
 
 extension _ResultNotifierAsyncExtension<T> on ResultNotifier<T> {
-  void setResultAsyncIgnore(FutureOr<Result<T>> Function() fetch) async {
+  Future<void> setResultAsyncIgnore(FutureOr<Result<T>> Function() fetch) async {
     try {
       await setResultAsync(fetch);
     } catch (e) {/* Ignoring */}

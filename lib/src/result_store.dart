@@ -233,7 +233,7 @@ class ResultStore<K, T> extends ChangeNotifier {
   }
 
   void _autoDisposeIfNeeded() {
-    for (var e in _cache.entries.toList()) {
+    for (final e in _cache.entries.toList()) {
       final cacheEntry = e.value;
       if (cacheEntry.notifier.isStale) {
         _disposeNotifier(e.key, cacheEntry, true);

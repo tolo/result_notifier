@@ -8,6 +8,8 @@ additions to [ValueNotifier](https://api.flutter.dev/flutter/foundation/ValueNot
 alludes to, one of the most important additions is the concept of a **Result** type, which can represent either some 
 **Data**, an **Error** or a **Loading** state.
 
+[![style: lint](https://img.shields.io/badge/style-lint-4BC0F5.svg)](https://pub.dev/packages/lint)
+
 ## Features
 
 * Familiar and platform-native concepts, based on `ValueNotifier`, `ChangeNotifier`, `ValueListenableBuilder` etc.
@@ -45,6 +47,9 @@ final notifier = ResultNotifier<String>.future(
 
 You can find a more complete example [here](https://pub.dev/packages/result_notifier/example), and additional examples 
 in the [examples directory](https://github.com/tolo/result_notifier/blob/main/example/lib) in the repository.  
+
+For an even more real-worldish example, check out [this fork](https://github.com/tolo/tmdb_movie_app) of Andrea 
+Bizzotto's TMDB Movie App, which uses Result Notifier instead of Riverpod.
 
 ## Or... rolling your own 🤷‍️
 Instead of adding a dependency this package, consider building it yourself. It's really not that hard, especially since 

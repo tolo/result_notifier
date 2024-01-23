@@ -14,7 +14,8 @@ void main() => runApp(const ResultStoreApp());
 class ResultStoreApp extends StatelessWidget {
   const ResultStoreApp({super.key});
 
-  @override Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     return const MaterialApp(
       title: 'ResultStoreApp',
       home: RepositoryProvider(),
@@ -70,37 +71,39 @@ class ActivityPage extends StatelessWidget {
   /// ```
   final ResultStore<String, String> activityRepository;
 
-  @override Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text('Activity suggestion (${activityRepository.lastUpdate})'),
+      appBar: AppBar(
+        title: Text('Activity suggestion (${activityRepository.lastUpdate})'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ActivityTypeWidget(
+              title: 'Recreational activity',
+              activity: activityRepository.value('recreational'),
+              refresh: () => activityRepository.refresh('recreational', force: true),
+              cancel: () => activityRepository.cancel('recreational'),
+            ),
+            const Padding(padding: EdgeInsets.symmetric(vertical: 16, horizontal: 64), child: Divider()),
+            ActivityTypeWidget(
+              title: 'Relaxing activity',
+              activity: activityRepository.value('relaxation'),
+              refresh: () => activityRepository.refresh('relaxation', force: true),
+              cancel: () => activityRepository.cancel('relaxation'),
+            ),
+            const Padding(padding: EdgeInsets.symmetric(vertical: 16, horizontal: 64), child: Divider()),
+            ActivityTypeWidget(
+              title: 'Social activity',
+              activity: activityRepository.value('social'),
+              refresh: () => activityRepository.refresh('social', force: true),
+              cancel: () => activityRepository.cancel('social'),
+            ),
+          ],
         ),
-        body: Center(
-          child: Column(mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ActivityTypeWidget(
-                title: 'Recreational activity',
-                activity: activityRepository.value('recreational'),
-                refresh: () => activityRepository.refresh('recreational', force: true),
-                cancel: () => activityRepository.cancel('recreational'),
-              ),
-              const Padding(padding: EdgeInsets.symmetric(vertical: 16, horizontal: 64), child: Divider()),
-              ActivityTypeWidget(
-                title: 'Relaxing activity',
-                activity: activityRepository.value('relaxation'),
-                refresh: () => activityRepository.refresh('relaxation', force: true),
-                cancel: () => activityRepository.cancel('relaxation'),
-              ),
-              const Padding(padding: EdgeInsets.symmetric(vertical: 16, horizontal: 64), child: Divider()),
-              ActivityTypeWidget(
-                title: 'Social activity',
-                activity: activityRepository.value('social'),
-                refresh: () => activityRepository.refresh('social', force: true),
-                cancel: () => activityRepository.cancel('social'),
-              ),
-            ],
-          ),
-        ),
+      ),
     );
   }
 }
@@ -119,7 +122,8 @@ class ActivityTypeWidget extends StatelessWidget {
   final VoidCallback refresh;
   final VoidCallback cancel;
 
-  @override Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
         Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
@@ -140,10 +144,13 @@ class ActivityTypeWidget extends StatelessWidget {
           data: (data) => Text(data),
           // Here, we first check if the error was due to cancellation before showing how to present the error. Another
           // way to check if the error was due to cancellation is see if the error is of type CancelledException.
-          error: (e, st, data) => activity.isCancelled ? Text('$data (cancelled)') : Text('Error: $e, last data: $data'),
+          error: (e, st, data) =>
+              activity.isCancelled ? Text('$data (cancelled)') : Text('Error: $e, last data: $data'),
         ),
         const SizedBox(height: 12),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
             FilledButton.icon(
               onPressed: refresh,
               icon: const Icon(Icons.refresh),

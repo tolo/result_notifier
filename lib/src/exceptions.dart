@@ -5,7 +5,7 @@ class ResultNotifierException implements Exception {
   final String message;
 
   @override
-  String toString() => '$runtimeType: $message';
+  String toString() => 'ResultNotifierException($message)';
 }
 
 /// Exception thrown when a ResultNotifier is disposed.

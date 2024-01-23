@@ -72,7 +72,11 @@ void main() {
 
     test('onErrorReturn', () {
       final fetcher = Fetcher();
-      final notifier = ResultNotifier<String>(onFetch: fetcher.onFetch, data: 'data', onErrorReturn: (e) => 'Default$e');
+      final notifier = ResultNotifier<String>(
+        onFetch: fetcher.onFetch,
+        data: 'data',
+        onErrorReturn: (e) => 'Default$e',
+      );
       notifier.toError(error: '1');
       expect(notifier.isData, true);
       expect(notifier.isError, false);
@@ -85,7 +89,6 @@ void main() {
 
       expect(fetcher.didFetch, isFalse);
     });
-
   });
 
   group('ResultNotifier - refresh and fetch', () {
@@ -98,7 +101,11 @@ void main() {
 
     test('Fetch is NOT invoked for fresh data (if expiration is set)', () {
       final fetcher = Fetcher();
-      final notifier = ResultNotifier<String>(data: 'test', onFetch: fetcher.onFetch, expiration: const Duration(seconds: 42));
+      final notifier = ResultNotifier<String>(
+        data: 'test',
+        onFetch: fetcher.onFetch,
+        expiration: const Duration(seconds: 42),
+      );
       expect(notifier.value, isA<Data<String>>());
       notifier.refresh();
       expect(notifier.value, isA<Data<String>>());
@@ -127,7 +134,11 @@ void main() {
     test('Fetch IS invoked for stale data', () {
       final fetcher = Fetcher(touch: true);
       final initialData = Data.stale('data');
-      final notifier = ResultNotifier<String>(result: initialData, onFetch: fetcher.onFetch, expiration: const Duration(seconds: 1));
+      final notifier = ResultNotifier<String>(
+        result: initialData,
+        onFetch: fetcher.onFetch,
+        expiration: const Duration(seconds: 1),
+      );
       expect(notifier.isStale, true);
       expect(notifier.value, isA<Data<String>>());
       notifier.refresh();
@@ -139,7 +150,11 @@ void main() {
     test('Fetch IS invoked after data has expired', () async {
       final fetcher = Fetcher(touch: true);
       final initialData = Data('data');
-      final notifier = ResultNotifier<String>(result: initialData, onFetch: fetcher.onFetch, expiration: const Duration(milliseconds: 100));
+      final notifier = ResultNotifier<String>(
+        result: initialData,
+        onFetch: fetcher.onFetch,
+        expiration: const Duration(milliseconds: 100),
+      );
       expect(notifier.isFresh, true);
       expect(notifier.value, isA<Data<String>>());
       await Future.delayed(const Duration(milliseconds: 200));
@@ -171,6 +186,7 @@ void main() {
         didFetch = true;
         return 'data';
       }
+
       final notifier = ResultNotifier<String>.future(fetch);
       final result = await notifier.refreshAwait();
       expect(result, equals('data'));
@@ -218,12 +234,13 @@ void main() {
     });
 
     test('Fetch after cancellation is performed', () async {
-      List<AsyncFetcher> fetchers = [];
+      final List<AsyncFetcher> fetchers = [];
       Future<String> fetch(FutureNotifier<String> n) {
         final fetcher = AsyncFetcher(id: 'data${fetchers.length + 1}', delayMs: fetchers.isEmpty ? 100 : 10);
         fetchers.add(fetcher);
         return fetcher.fetch(n);
       }
+
       final notifier = ResultNotifier<String>.future(fetch);
       notifier.refresh();
       notifier.cancel();
@@ -244,6 +261,7 @@ void main() {
         await Future.delayed(const Duration(milliseconds: 50));
         yield 'data2';
       }
+
       int invokeListenerCount = 0;
       String? lastData;
       void listener(String data) {
@@ -282,10 +300,12 @@ void main() {
 
     test('Caches ResultNotifier', () async {
       int createCount = 0;
-      final store = ResultStore<String, String>(create: (key, _) {
-        createCount++;
-        return ResultNotifier<String>(data: 'data$key');
-      });
+      final store = ResultStore<String, String>(
+        create: (key, _) {
+          createCount++;
+          return ResultNotifier<String>(data: 'data$key');
+        },
+      );
       String value = store.data('1');
       expect(value, equals('data1'));
       value = store.data('1');
@@ -326,8 +346,9 @@ void main() {
       int invokeListenerCount = 0;
       void listener() => invokeListenerCount++;
       final store = ResultStore<String, String>(
-          create: (key, store) => ResultNotifier<String>(data: 'data$key', expiration: store.autoDisposeTimerInterval),
-          autoDisposeTimerInterval: const Duration(milliseconds: 100));
+        create: (key, store) => ResultNotifier<String>(data: 'data$key', expiration: store.autoDisposeTimerInterval),
+        autoDisposeTimerInterval: const Duration(milliseconds: 100),
+      );
       store.addListener(listener);
 
       final notifier = store.getNotifier('1');
@@ -350,6 +371,7 @@ void main() {
         lastKey = key;
         lastResult = result;
       }
+
       final store = ResultStore<String, String>(create: (key, store) => ResultNotifier<String>(data: 'data$key'));
       final disposer = store.onResult(listener);
 
@@ -381,7 +403,7 @@ class Fetcher {
 
   bool didFetch = false;
 
-  void onFetch(notifier) {
+  void onFetch<T>(ResultNotifier<T> notifier) {
     didFetch = true;
     if (touch) notifier.touch();
   }

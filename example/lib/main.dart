@@ -29,7 +29,8 @@ final activityRepository = ResultNotifier<String>.future(
 class SimpleResultNotifierExampleApp extends StatelessWidget {
   const SimpleResultNotifierExampleApp({super.key});
 
-  @override Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     return const MaterialApp(
       title: 'SimpleResultNotifierExampleApp',
       home: ActivityPage(),
@@ -41,24 +42,25 @@ class SimpleResultNotifierExampleApp extends StatelessWidget {
 class ActivityPage extends StatelessWidget {
   const ActivityPage({super.key});
 
-  @override Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Activity suggestion'),
-      ),
-      body: Center(
-        child: ResultBuilder<String>(activityRepository,
-          onLoading: (context, data) => const CircularProgressIndicator(),
-          onError: (context, error, stackTrace, data) => Text('Error: $error'),
-          onData: (context, data) => Text(data),
+        appBar: AppBar(
+          title: const Text('Activity suggestion'),
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => activityRepository.refresh(), // Note: if the ResultNotifier was setup to use (cache)
-        // expiration, we would have to pass `force: true` to the `refresh` method to force a new fetch.
-        icon: const Icon(Icons.refresh),
-        label: const Text('New activity suggestion'),
-      )
-    );
+        body: Center(
+          child: ResultBuilder<String>(
+            activityRepository,
+            onLoading: (context, data) => const CircularProgressIndicator(),
+            onError: (context, error, stackTrace, data) => Text('Error: $error'),
+            onData: (context, data) => Text(data),
+          ),
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => activityRepository.refresh(), // Note: if the ResultNotifier was setup to use (cache)
+          // expiration, we would have to pass `force: true` to the `refresh` method to force a new fetch.
+          icon: const Icon(Icons.refresh),
+          label: const Text('New activity suggestion'),
+        ));
   }
 }
