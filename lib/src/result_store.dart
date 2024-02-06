@@ -5,8 +5,8 @@ import 'package:meta/meta.dart';
 import 'result.dart';
 import 'result_notifier.dart';
 
-typedef CreateResultNotifier<K, T> = ResultNotifier<T> Function(K, ResultStore<K, T>);
-typedef ResultNotifierOnDispose<K, T> = void Function(K, ResultNotifier<T>);
+typedef CreateResultNotifier<K, T> = ResultNotifier<T> Function(K key, ResultStore<K, T> store);
+typedef ResultNotifierOnDispose<K, T> = void Function(K key, ResultNotifier<T> strore);
 
 typedef _CacheEntry<T> = ({ResultNotifier<T> notifier, Disposer removeListener});
 
@@ -65,7 +65,7 @@ class ResultStore<K, T> extends ChangeNotifier {
   /// Registers a listener ([addListener]) that will be invoked with the key and result of the last modified
   /// [ResultNotifier], whenever one is modified.
   @useResult
-  Disposer onResult(void Function(K, Result<T>) callback) {
+  Disposer onResult(void Function(K key, Result<T> result) callback) {
     void listener() {
       final modification = _currentModification;
       if (modification != null) {
@@ -160,8 +160,8 @@ class ResultStore<K, T> extends ChangeNotifier {
   /// Cancels any ongoing fetch operation for the ResultNotifier with the specified key.
   ///
   /// See [ResultNotifier.cancel] for more information.
-  Result<T>? cancel(K key, {Result<T>? result, bool always = false}) {
-    _cache[key]?.notifier.cancel(result: result, always: always);
+  Result<T>? cancel(K key, {bool always = false}) {
+    _cache[key]?.notifier.cancel(always: always);
     return read(key);
   }
 

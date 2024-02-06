@@ -141,10 +141,10 @@ class ResultNotifierProvider<T> extends ResourceProvider<ResultNotifier<T>> {
 typedef CreateResource<T> = T Function(BuildContext context);
 
 /// Signature for functions that disposes a resource.
-typedef DisposeResource<T> = void Function(BuildContext context, T);
+typedef DisposeResource<T> = void Function(BuildContext context, T resource);
 
 /// Signature for functions that builds a Widget using a resource.
-typedef ResourceWidgetBuilder<T> = Widget Function(BuildContext context, T);
+typedef ResourceWidgetBuilder<T> = Widget Function(BuildContext context, T resource);
 
 /// Stateful convenience Widget that manages the lifecycle (creation and disposal) of a resource and making it available
 /// when building this Widget, as well as to all descendant Widgets (see [of]).

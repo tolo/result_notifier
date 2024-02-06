@@ -113,10 +113,10 @@ sealed class Result<T> {
   ///
   /// The action can return a new representation of the result.
   X when<X>({
-    required X Function(T?) loading,
-    required X Function(T) data,
-    required X Function(Object, StackTrace?, T?) error,
-    X Function(T?)? cancelled,
+    required X Function(T? data) loading,
+    required X Function(T data) data,
+    required X Function(Object error, StackTrace? stackTrace, T? data) error,
+    X Function(T? data)? cancelled,
   }) {
     return switch (this) {
       Data(data: final d) => data(d),
@@ -130,10 +130,10 @@ sealed class Result<T> {
   ///
   /// The action can return a new representation of the result, or simply null.
   X? whenOr<X>({
-    X? Function(T?)? loading,
-    X? Function(T)? data,
-    X? Function(Object, StackTrace?, T?)? error,
-    X Function(T?)? cancelled,
+    X? Function(T? data)? loading,
+    X? Function(T data)? data,
+    X? Function(Object error, StackTrace? stackTrace, T? data)? error,
+    X Function(T? data)? cancelled,
   }) {
     return switch (this) {
       Data(data: final v) => data?.call(v),
@@ -148,8 +148,8 @@ sealed class Result<T> {
   /// The `hasData` callback will be called if data is present (i.e. [hasData]), if not, the `orElse` callback will be
   /// used.
   X whenData<X>({
-    required X Function(T) hasData,
-    required X Function(Result<T>) orElse,
+    required X Function(T data) hasData,
+    required X Function(Result<T> result) orElse,
   }) {
     return data != null ? hasData(data as T) : orElse(this);
   }
@@ -217,39 +217,55 @@ final class Data<T> extends Result<T> {
 
 /// Error
 final class Error<T> extends Result<T> {
-  Error({required this.error, this.stackTrace, this.data, super.lastUpdate})
-      : isCancelled = false,
+  /// Created a Error.
+  Error({required this.error, this.stackTrace, this.data, super.lastUpdate}) : super._();
+
+  /// Creates a Error indicating there was no data ([NoDataException]).
+  Error.noData({this.data, super.lastUpdate})
+      : error = NoDataException(),
+        stackTrace = null,
         super._();
-  Error.noData({T? data, DateTime? lastUpdate})
-      : this._(error: NoDataException(), isCancelled: false, data: data, lastUpdate: lastUpdate);
-  Error.cancelled({T? data, DateTime? lastUpdate})
-      : this._(error: CancelledException(), isCancelled: true, data: data, lastUpdate: lastUpdate);
-  Error._({required this.error, required this.isCancelled, this.stackTrace, this.data, super.lastUpdate}) : super._();
+
+  /// Creates a Error indicating a cancelled operation ([CancelledException]).
+  Error.cancelled({this.data, super.lastUpdate})
+      : error = CancelledException(),
+        stackTrace = null,
+        super._();
+
+  /// Creates a Error indicating a disposed notifier ([DisposedException]).
+  Error.disposed({this.data, super.lastUpdate})
+      : error = DisposedException(),
+        stackTrace = null,
+        super._();
 
   @override
   final Object error;
   final StackTrace? stackTrace;
   @override
   final T? data;
-  @override
-  final bool isCancelled;
 
   @override
-  Result<T> copyWith({T? data, DateTime? lastUpdate}) => Error._(
+  bool get isCancelled => error is CancelledException;
+
+  bool get isDisposed => error is DisposedException;
+
+  bool get isNoData => error is NoDataException;
+
+  @override
+  Result<T> copyWith({T? data, DateTime? lastUpdate}) => Error(
         error: error,
         stackTrace: stackTrace,
         data: data ?? this.data,
         lastUpdate: lastUpdate ?? this.lastUpdate,
-        isCancelled: isCancelled,
       );
 
   @override
   bool operator ==(Object other) {
-    return super == other && other is Error && stackTrace == other.stackTrace && isCancelled == other.isCancelled;
+    return super == other && other is Error && error == other.error && stackTrace == other.stackTrace;
   }
 
   @override
-  int get hashCode => Object.hash(super.hashCode, stackTrace, isCancelled);
+  int get hashCode => Object.hash(super.hashCode, error, stackTrace, isCancelled);
 
   @override
   String toString() => 'Error<$T>(error: $error, stackTrack: $stackTrace, data: $data, lastUpdate: $lastUpdate)';

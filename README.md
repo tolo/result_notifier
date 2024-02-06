@@ -33,7 +33,34 @@ alludes to, one of the most important additions is the concept of a **Result** t
 
 ## Getting Started
 
-Simply [add the dependency](https://pub.dev/packages/result_notifier/install) and start writing some code:  
+Simply [add the dependency](https://pub.dev/packages/result_notifier/install) and start writing some notifiers!  
+
+The simplest form of notifier only holds a value, much like a `ValueNotifier`. But with `ResultNotifier`, the value is 
+wrapped in a `Result` type, which can represent either some data, an error, or a loading state. 
+
+```dart
+final notifier = ResultNotifier<String>(data: 'Hello...');
+notifier.toLoading(); // Convenience method to set the value to Loading, keeping the previous data.
+print(notifier.data); // Prints 'Hello...'
+notifier.value = Data('Hello Flutter!');
+// or:
+notifier.data = 'Hello Flutter!';
+```
+
+To use the notifier in a Widget, you can use the `ResultBuilder` widget, which is similar to `ValueListenableBuilder`, 
+but makes it easy to handle the different states of the result. 
+```dart
+ResultBuilder<String>(
+  notifier,
+  onLoading: (context, data) => const CircularProgressIndicator(),
+  onError: (context, error, stackTrace, data) => Text('Error: $error'),
+  onData: (context, data) => Text(data),
+),
+```
+
+Often you'll want to do something a little more elaborate, like fetching data from an API. In this case, you can 
+`FutureNotifier` (or ResultNotifier.future), which is a `ResultNotifier` that uses a "fetcher" function that returns a 
+Future. 
 
 ```dart
 final notifier = ResultNotifier<String>.future(
@@ -45,9 +72,20 @@ final notifier = ResultNotifier<String>.future(
 );
 ``` 
 
+You can also use effects (see `EffectNotifier`), to build more complex chains of notifiers:  
+
+```dart
+notifier.effect((_, input) => input.toUpperCase());
+```
+See also the [effects](https://github.com/tolo/result_notifier/blob/main/example/lib/effects.dart) example for a more 
+complete demonstration of these concepts.
+
+
+### Examples
 You can find a more complete example [here](https://pub.dev/packages/result_notifier/example), and additional examples 
 in the [examples directory](https://github.com/tolo/result_notifier/blob/main/example/lib) in the repository.  
 
+### More examples
 For an even more real-worldish example, check out [this fork](https://github.com/tolo/tmdb_movie_app) of Andrea 
 Bizzotto's TMDB Movie App, which uses Result Notifier instead of Riverpod.
 

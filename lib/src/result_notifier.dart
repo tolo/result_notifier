@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:core';
 import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
 import 'async_notifier.dart';
+import 'effect_notifiers.dart';
 import 'exceptions.dart';
 import 'result.dart';
 
@@ -10,7 +12,7 @@ import 'result.dart';
 typedef Disposer = void Function();
 
 /// Signature for callback functions used by [ResultNotifier].
-typedef ResultNotifierCallback<T> = void Function(ResultNotifier<T>);
+typedef ResultNotifierCallback<T> = void Function(ResultNotifier<T> notifier);
 
 /// [ValueNotifier] subclass using [Result] as value type, supporting data, loading and error states.
 ///
@@ -19,11 +21,11 @@ typedef ResultNotifierCallback<T> = void Function(ResultNotifier<T>);
 ///
 /// ResultNotifier also supports refreshing data when stale. The staleness is determined by the [expiration] property
 /// (see [isFresh] / [isStale]) along with the [Result.lastUpdate] property. This creates the underpinning for a
-/// refreshable caching mechanism, where the data can be re-fetched when stale. Whenever data needs to be fetched,
-/// [onFetch] will be invoked. The default implementation of this method will only [touch] the current value to refresh
-/// it. If customization of data fetch is needed, consider using a ResultNotifier subclass such as for instance
-/// [FutureNotifier] (see [ResultNotifier.future]), or provide a implementation of `onFetch` that refreshes the data in
-/// some other manner.
+/// refreshable caching mechanism, where the data can be re-fetched when stale. Whenever data needs to be fetched, the
+/// optional [onFetch] callback will be invoked. If not provided, the default implementation will only [touch] the
+/// current value to refresh it. If customization of data fetch is needed, consider using a ResultNotifier subclass such
+/// as for instance [FutureNotifier] (see [ResultNotifier.future]), or provide a implementation of `onFetch` that
+/// refreshes the data in some other manner.
 ///
 /// Data fetch will occur automatically, on demand, whenever a listener is added (see [addListener]), It can
 /// additionally be triggered manually by invoking the [refresh]. A fetch will be performed whenever:
@@ -55,13 +57,12 @@ class ResultNotifier<T> extends ValueNotifier<Result<T>> {
     T? data,
     Result<T>? result,
     this.expiration,
-    ResultNotifierCallback<T>? onFetch,
+    this.onFetch,
     this.onReset,
     this.onErrorReturn,
     bool autoReset = false,
     bool refreshOnError = false,
-  })  : onFetch = onFetch ?? _defaultOnFetch,
-        willAutoReset = autoReset,
+  })  : willAutoReset = autoReset,
         willRefreshOnError = refreshOnError,
         super(data != null ? Data(data) : result ?? Initial<T>());
 
@@ -93,8 +94,6 @@ class ResultNotifier<T> extends ValueNotifier<Result<T>> {
     );
   }
 
-  static void _defaultOnFetch(ResultNotifier not) => not.touch();
-
   /// Checks if this notifier is still active, i.e. not disposed.
   bool get isActive => _active;
   bool _active = true;
@@ -102,7 +101,7 @@ class ResultNotifier<T> extends ValueNotifier<Result<T>> {
   // Properties
 
   /// Callback invoked when data needs to be fetched.
-  final ResultNotifierCallback<T> onFetch;
+  final ResultNotifierCallback<T>? onFetch;
 
   /// Callback invoked when this notifier is reset, cancelled or disposed.
   ///
@@ -252,13 +251,12 @@ class ResultNotifier<T> extends ValueNotifier<Result<T>> {
   /// Cancels the current data loading operation, if any.
   ///
   /// If (and only if) the current state is [Loading] (i.e. [isLoading]), the refresh operation is cancelled by setting
-  /// the value to the specified result, or a cancelled [Error] state if not specified. If specified, the [onCancel]
-  /// function will also be invoked.
+  /// the value to [Error.cancelled]. If specified, the [onReset] function will also be invoked.
   ///
   /// If [always] is true, cancellation will happen regardless of the current state.
-  void cancel({Result<T>? result, bool always = false}) {
+  void cancel({bool always = false}) {
     if (isLoading || always) {
-      value = result ?? value.toCancelled();
+      value = value.toCancelled();
       onReset?.call(this);
     }
   }
@@ -290,7 +288,26 @@ class ResultNotifier<T> extends ValueNotifier<Result<T>> {
       return;
     }
 
-    onFetch(this);
+    try {
+      fetchData();
+    } catch (error, stackTrace) {
+      toError(error: error, stackTrace: stackTrace);
+    }
+  }
+
+  /// Called to fetch new data.
+  ///
+  /// This implementation simply delegates to the configured [onFetch] callback, if set, otherwise [touch] will be
+  /// called to refresh the value.
+  ///
+  /// Note: this method is provided for subclass customization and should not be called directly.
+  @protected
+  void fetchData() {
+    if (onFetch != null) {
+      onFetch?.call(this);
+    } else {
+      touch();
+    }
   }
 
   /// Refreshes this notifier with fresh [Data] if it is stale or forced, and awaits data or error.
@@ -328,7 +345,7 @@ class ResultNotifier<T> extends ValueNotifier<Result<T>> {
   ///
   /// The returned [Disposer] muse be used to remove the listener.
   @useResult
-  Disposer onError(void Function(Object? e, StackTrace? st, T? data) callback) =>
+  Disposer onError(void Function(Object? error, StackTrace? stackTrace, T? data) callback) =>
       onResult((result) => result.whenOr(error: callback));
 
   /// Registers a listener ([addListener]) that will be invoked with the current Result ([value]).
@@ -394,65 +411,174 @@ class ResultNotifier<T> extends ValueNotifier<Result<T>> {
 
   // Async result mutation
 
-  /// Set the data of this notifier asynchronously (i.e. via Future).
+  /// Set the data of this notifier asynchronously using the provided fetch function, and then returns the data.
   ///
-  /// {@macro result_notifier.setResultAsync}
-  Future<T> setDataAsync(FutureOr<T> Function() fetch) async {
-    return setResultAsync(() async {
-      return Data(await fetch());
-    }).then((r) => r.isError ? throw (r as Error).error : r.data!);
-  }
-
-  /// Set the value of this notifier asynchronously (i.e. via Future).
-  ///
-  /// {@template result_notifier.setResultAsync}
-  /// Returns the result of the specified [fetch] function, which is also set as the value of this notifier. If this
-  /// notifier was cancelled during the asynchronous gap, the result of [fetch] will be ignored and an error
-  /// ([Future.error]) will be returned by this method (i.e. [CancelledException]).
+  /// Before executing the [fetch] function, the current state will be set to [Loading]. When the fetch completes, the
+  /// result will be set to [Data] if successful, or [Error] if an error occurs. If this notifier was cancelled during
+  /// the asynchronous gap, the result of [fetch] will be ignored and an ([Future.error]) will be returned by this
+  /// method (i.e. [CancelledException]).
   ///
   /// Instead of using the Future returned by this method, consider using [future] instead, which will await the next
   /// successful data or error result of this notifier.
-  /// {@endtemplate}
+  Future<T> setDataAsync(FutureOr<T> Function() fetch) async {
+    return setResultAsync(() async {
+      final data = fetch();
+      return data is Future ? Data(await data) : Data(data);
+    }).then((r) => r.isError ? throw (r as Error).error : r.data!);
+  }
+
+  /// Set the value (result) of this notifier asynchronously using the provided fetch function, and then returns the
+  /// result.
+  ///
+  /// Before executing the [fetch] function, the current state will be set to [Loading]. When the fetch completes, the
+  /// result will be the result of the fetch if successful, or [Error] if an error occurs. If this notifier was
+  /// cancelled during the asynchronous gap, the result of [fetch] will be ignored and an [Error] will be returned by
+  /// this method (i.e. [Error.cancelled]).
+  ///
+  /// Note that the Future returned by this method will always complete with a value, never an error. If an error
+  /// occurs, it will be represented as an [Error] result.
+  ///
+  /// Instead of using the Future returned by this method, consider using [future] instead, which will await the next
+  /// successful data or error result of this notifier.
   Future<Result<T>> setResultAsync(FutureOr<Result<T>> Function() fetch) async {
     assert(ChangeNotifier.debugAssertNotDisposed(this));
-    if (!isLoadingData) value = value.toLoading();
+    toLoading(); // Important to always create a new Loading value, to indicate a new loading operation has started
 
     final previousResult = value;
-    Future<Result<T>>? abortIfDisposedOrCancelled(Object? error, StackTrace? stackTrace) {
+    Result<T>? abortIfDisposedOrCancelled() {
       if (!_active) {
-        return Future.error(DisposedException());
-      } else if (error is ResultNotifierException) {
-        return Future.error(error, stackTrace);
+        return Error.disposed();
       } else if (previousResult != value) {
         // Result changed during asynchronous gap, likely due to cancellation - abort
-        if (value.isCancelled) {
-          return Future.error(CancelledException());
-        } else {
-          // TODO: Log warning about concurrent modification unless cancelled
-        }
+        // TODO: Log warning about concurrent modification unless cancelled
+        return Error.cancelled();
       }
       return null;
     }
 
     try {
-      final result = await fetch();
+      final fetchResult = await fetch();
 
-      final shouldAbort = abortIfDisposedOrCancelled(null, null);
-      if (shouldAbort != null) return shouldAbort;
+      final shouldAbortResult = abortIfDisposedOrCancelled();
+      if (shouldAbortResult != null) return shouldAbortResult;
 
-      value = result;
-      return result;
+      value = fetchResult;
     } catch (error, stackTrace) {
-      final shouldAbort = abortIfDisposedOrCancelled(error, stackTrace);
-      if (shouldAbort != null) {
-        return shouldAbort;
-      } /*else if (error is OverrideResultException<T>) {
-        value = error.result;
-      }*/
-      else {
+      final shouldAbortResult = abortIfDisposedOrCancelled();
+      if (shouldAbortResult != null) {
+        return shouldAbortResult;
+      } else {
+        // CancelledException and NoDataException should end up here (i.e. update the result to Error)
         toError(error: error, stackTrace: stackTrace);
       }
-      return Future.error(error, stackTrace);
     }
+    return result;
+  }
+
+  // Effects
+
+  /// Creates a new [CombineLatestNotifier] that that combines the value of this notifier with another one.
+  CombineLatestNotifier<T, R> combineLatest<R>(
+    ResultNotifier<T> other, {
+    required R Function(List<T> data) combineData,
+  }) {
+    return CombineLatestNotifier([this, other], combineData: combineData);
+  }
+
+  /// Creates a new synchronous [EffectNotifier] that executes the provided effect the data of this notifier changes.
+  ///
+  /// See [SyncEffectNotifier].
+  EffectNotifier<T, R> effect<R>(
+    Effect<T, R> effect, {
+    R? data,
+    Result<R>? result,
+    Duration? expiration,
+    ResultNotifierCallback<R>? onReset,
+    R Function(Object? error)? onErrorReturn,
+    bool autoReset = false,
+    bool refreshOnError = false,
+    bool ignoreLoading = false,
+  }) {
+    return SyncEffectNotifier(
+      this,
+      effect: effect,
+      data: data,
+      result: result,
+      expiration: expiration,
+      onReset: onReset,
+      onErrorReturn: onErrorReturn,
+      autoReset: autoReset,
+      refreshOnError: refreshOnError,
+      ignoreLoading: ignoreLoading,
+    );
+  }
+
+  /// Creates a new [ResultNotifier] that only gets updated when the data of this notifier changes, i.e. ignoring
+  /// [Loading] and [Error] states.
+  ResultNotifier<T> alwaysData(T defaultData) {
+    return effect(
+      (_, data) => data,
+      data: defaultData,
+      onErrorReturn: (_) => defaultData,
+      ignoreLoading: true,
+    );
+  }
+
+  /// Creates a new asynchronous [EffectNotifier] that executes the provided asynchronous effect the data of this
+  /// notifier changes.
+  ///
+  /// See [AsyncEffectNotifier].
+  EffectNotifier<T, R> asyncEffect<R>(
+    AsyncEffect<T, R> effect, {
+    R? data,
+    Result<R>? result,
+    Duration? expiration,
+    ResultNotifierCallback<R>? onReset,
+    R Function(Object? error)? onErrorReturn,
+    bool autoReset = false,
+    bool refreshOnError = false,
+    bool ignoreLoading = false,
+  }) {
+    return AsyncEffectNotifier(
+      this,
+      effect: effect,
+      data: data,
+      result: result,
+      expiration: expiration,
+      onReset: onReset,
+      onErrorReturn: onErrorReturn,
+      autoReset: autoReset,
+      refreshOnError: refreshOnError,
+      ignoreLoading: ignoreLoading,
+    );
+  }
+
+  /// Creates a new asynchronous [EffectNotifier] that executes the provided strean effect the data of this
+  /// notifier changes.
+  ///
+  /// See [StreamEffectNotifier].
+  EffectNotifier<T, R> streamEffect<R>(
+    StreamEffect<T, R> effect, {
+    R? data,
+    Result<R>? result,
+    Duration? expiration,
+    ResultNotifierCallback<R>? onReset,
+    R Function(Object? error)? onErrorReturn,
+    bool autoReset = false,
+    bool refreshOnError = false,
+    bool ignoreLoading = false,
+  }) {
+    return StreamEffectNotifier(
+      this,
+      effect: effect,
+      data: data,
+      result: result,
+      expiration: expiration,
+      onReset: onReset,
+      onErrorReturn: onErrorReturn,
+      autoReset: autoReset,
+      refreshOnError: refreshOnError,
+      ignoreLoading: ignoreLoading,
+    );
   }
 }

@@ -2,6 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:result_notifier/result_notifier.dart';
 
+import 'test_helpers.dart';
+
 void main() {
   group('ResultNotifier - states', () {
     test('Initial default states', () {
@@ -177,12 +179,20 @@ void main() {
       expect(notifier.value, isA<Data<String>>());
       expect(notifier.value, isNot(equals(initialData)));
     });
+
+    test('Fetch callback throws error', () async {
+      final fetcher = Fetcher(touch: true);
+      final notifier = ResultNotifier<String>(onFetch: fetcher.error);
+      notifier.refresh();
+      expect(notifier.isError, isTrue);
+      expect(fetcher.didFetch, isTrue);
+    });
   });
 
   group('FutureNotifier', () {
     test('Fetch sync', () async {
       bool didFetch = false;
-      String fetch(FutureNotifier<String> n) {
+      String fetch(ResultNotifier<String> n) {
         didFetch = true;
         return 'data';
       }
@@ -207,6 +217,37 @@ void main() {
       final result = await notifier.refreshAwait();
       expect(result, equals(fetcher.id));
       expect(fetcher.didFetch, isTrue);
+    });
+
+    test('Fetch async error', () async {
+      final fetcher = AsyncFetcher(id: 'data');
+      final notifier = FutureNotifier<String>.result(fetcher.error);
+      String? result;
+      try {
+        result = await notifier.refreshAwait();
+      } catch (e) {
+        expect(e, isA<Exception>());
+      }
+      expect(result, isNull);
+      expect(notifier.isError, isTrue);
+      expect(fetcher.didFetch, isTrue);
+    });
+
+    test('Fetch async report loading', () async {
+      final fetcher = AsyncFetcher(id: 'data');
+      final notifier = ResultNotifier<String>.future(fetcher.fetch);
+      bool didNotifyOnLoading = false;
+      final disposer = notifier.onLoading((data) {
+        didNotifyOnLoading = true;
+      });
+      notifier.refresh();
+      expect(notifier.isLoading, isTrue); // Loading is reported immediately
+      await Future.delayed(const Duration(milliseconds: 10)); // Delay a bit to allow fetch to start executing
+      expect(didNotifyOnLoading, isTrue); // Make sure loading was reported to listeners
+      final result = await notifier.future;
+      expect(result, equals(fetcher.id));
+      expect(fetcher.didFetch, isTrue);
+      disposer();
     });
 
     test('Fetch is correctly cancelled', () async {
@@ -235,7 +276,7 @@ void main() {
 
     test('Fetch after cancellation is performed', () async {
       final List<AsyncFetcher> fetchers = [];
-      Future<String> fetch(FutureNotifier<String> n) {
+      Future<String> fetch(ResultNotifier<String> n) {
         final fetcher = AsyncFetcher(id: 'data${fetchers.length + 1}', delayMs: fetchers.isEmpty ? 100 : 10);
         fetchers.add(fetcher);
         return fetcher.fetch(n);
@@ -272,165 +313,300 @@ void main() {
       final notifier = StreamNotifier(fetch);
       final disposer = notifier.onData(listener);
 
+      expect(notifier.isLoading, isTrue);
+
       await Future.delayed(const Duration(milliseconds: 10));
 
       expect(lastData, equals('data1'));
+      expect(notifier.isData, isTrue);
       expect(notifier.data, equals('data1'));
       expect(invokeListenerCount, equals(1));
 
       await Future.delayed(const Duration(milliseconds: 100));
 
       expect(lastData, equals('data2'));
+      expect(notifier.isData, isTrue);
       expect(notifier.data, equals('data2'));
       expect(invokeListenerCount, equals(2));
 
       disposer();
     });
-  });
 
-  group('NotifierStore', () {
-    test('Creates ResultNotifier', () async {
-      final store = ResultStore<String, String>(create: (key, _) => ResultNotifier<String>(data: 'data$key'));
-      String value = store.data('1');
-      expect(value, equals('data1'));
-      value = store.data('2');
-      expect(value, equals('data2'));
-      expect(store.length, equals(2));
-    });
-
-    test('Caches ResultNotifier', () async {
-      int createCount = 0;
-      final store = ResultStore<String, String>(
-        create: (key, _) {
-          createCount++;
-          return ResultNotifier<String>(data: 'data$key');
-        },
-      );
-      String value = store.data('1');
-      expect(value, equals('data1'));
-      value = store.data('1');
-      expect(value, equals('data1'));
-      expect(createCount, equals(1));
-      expect(store.length, equals(1));
-    });
-
-    test('Notifies listener', () async {
-      int invokeListenerCount = 0;
-      void listener() => invokeListenerCount++;
-      final store = ResultStore<String, String>(create: (key, _) => ResultNotifier<String>(data: 'data$key'));
-      store.addListener(listener);
-
-      expect(store.data('1'), equals('data1'));
-      final notifier = store.getNotifier('1');
-      notifier.data = 'updated';
-
-      expect(store.data('1'), equals('updated'));
-      expect(store.length, equals(1));
-      expect(invokeListenerCount, equals(1));
-    });
-
-    test('Auto-disposes ResultNotifier', () async {
-      void listener() {}
-      final store = ResultStore<String, String>(create: (key, _) => ResultNotifier<String>(data: 'data$key'));
-      store.addListener(listener);
-
-      final notifier = store.getNotifier('1');
-      expect(store.length, equals(1));
-
-      store.removeListener(listener);
-      expect(store.length, equals(0));
-      expect(notifier.isActive, isFalse);
-    });
-
-    test('Auto-disposes stale ResultNotifier', () async {
-      int invokeListenerCount = 0;
-      void listener() => invokeListenerCount++;
-      final store = ResultStore<String, String>(
-        create: (key, store) => ResultNotifier<String>(data: 'data$key', expiration: store.autoDisposeTimerInterval),
-        autoDisposeTimerInterval: const Duration(milliseconds: 100),
-      );
-      store.addListener(listener);
-
-      final notifier = store.getNotifier('1');
-      expect(store.length, equals(1));
-      expect(store.autoDisposeTimer, isNotNull);
-
-      await Future.delayed(const Duration(milliseconds: 200));
-      expect(store.length, equals(0));
-      expect(notifier.isStale, isTrue);
-      expect(store.autoDisposeTimer, isNull);
-      expect(invokeListenerCount, equals(1));
-    });
-
-    test('OnResult is correctly invoked', () async {
-      int invokeListenerCount = 0;
-      String? lastKey;
-      Result<String>? lastResult;
-      void listener(String key, Result<String> result) {
-        invokeListenerCount++;
-        lastKey = key;
-        lastResult = result;
+    test('Stream fetch is correctly cancelled', () async {
+      Stream<String> fetch(StreamNotifier<String> n) async* {
+        yield 'data1';
+        await Future.delayed(const Duration(milliseconds: 50));
+        yield 'data2';
       }
 
-      final store = ResultStore<String, String>(create: (key, store) => ResultNotifier<String>(data: 'data$key'));
-      final disposer = store.onResult(listener);
+      final notifier = StreamNotifier(fetch);
+      notifier.refresh();
+      await Future.delayed(const Duration(milliseconds: 10)); // Delay a bit to allow first stream event to be emitted
+      notifier.cancel();
+      await Future.delayed(const Duration(milliseconds: 50)); // Wait to give time for fetch to finish executing
+      expect(notifier.isCancelled, true);
+      expect(notifier.isData, false);
+      expect(notifier.hasData, true);
+      expect(notifier.data, 'data1'); // First data should be available
+    });
 
-      String data = store.data('1');
-      expect(data, equals('data1'));
-      expect(store.length, equals(1));
-      await Future.delayed(const Duration(milliseconds: 10)); // Wait for listener to be invoked
-      expect(lastKey, equals('1'));
-      expect(lastResult, isNotNull);
-      expect(lastResult!.data, equals('data1'));
+    test('Stream fetch is correctly aborted when notifier is disposed', () async {
+      Stream<String> fetch(StreamNotifier<String> n) async* {
+        yield 'data1';
+        await Future.delayed(const Duration(milliseconds: 50));
+        yield 'data2';
+      }
+
+      int invokeListenerCount = 0;
+      String? lastData;
+      void listener(String data) {
+        invokeListenerCount++;
+        lastData = data;
+      }
+
+      final notifier = StreamNotifier(fetch);
+      final disposer = notifier.onData(listener);
+      notifier.refresh();
+      await Future.delayed(const Duration(milliseconds: 1)); // Delay a bit to allow fetch to start executing
+      notifier.dispose();
+      await Future.delayed(const Duration(milliseconds: 50)); // Wait to give time for fetch to finish executing
+      expect(notifier.isActive, false);
       expect(invokeListenerCount, equals(1));
-
-      data = store.data('2');
-      expect(data, equals('data2'));
-      expect(store.length, equals(2));
-      await Future.delayed(const Duration(milliseconds: 10)); // Wait for listener to be invoked
-      expect(lastKey, equals('2'));
-      expect(lastResult!.data, equals('data2'));
-      expect(invokeListenerCount, equals(2));
-
+      expect(lastData, equals('data1'));
       disposer();
     });
   });
-}
 
-class Fetcher {
-  Fetcher({this.touch = false});
-  final bool touch;
+  group('CombineLatestNotifier', () {
+    test('Initial combined result is not data', () async {
+      final notifier1 = ResultNotifier<String>(data: 'Hello ');
+      final notifier2 = ResultNotifier<String>(data: 'World');
+      final combined = CombineLatestNotifier<String, String>(
+        [notifier1, notifier2],
+        combineData: (data) => data[0] + data[1],
+      );
 
-  bool didFetch = false;
+      expect(combined.isData, isFalse);
+    });
 
-  void onFetch<T>(ResultNotifier<T> notifier) {
-    didFetch = true;
-    if (touch) notifier.touch();
-  }
-}
+    test('Combine result on refresh', () async {
+      final notifier1 = ResultNotifier<String>(data: 'Hello ');
+      final notifier2 = ResultNotifier<String>(data: 'World');
+      final combined = CombineLatestNotifier<String, String>(
+        [notifier1, notifier2],
+        combineData: (data) => data[0] + data[1],
+      );
+      combined.refresh();
 
-class AsyncFetcher {
-  AsyncFetcher({required this.id, int delayMs = 10}) : delay = Duration(milliseconds: delayMs);
-  final String id;
-  final Duration delay;
-  int fetchCount = 0;
-  bool get didFetch => fetchCount > 0;
+      expect(combined.data, equals('Hello World'));
+    });
 
-  Future<String> fetch(FutureNotifier<String> notifier) async {
-    fetchCount++;
-    await Future.delayed(const Duration(milliseconds: 10));
-    if (notifier.isCancelled || !notifier.isActive) throw CancelledException();
-    final result = await Future.delayed(delay, () => id);
-    if (notifier.isCancelled || !notifier.isActive) throw CancelledException();
-    return result;
-  }
+    test('Combine result on source modification', () async {
+      final notifier1 = ResultNotifier<String>(data: 'Hello ');
+      final notifier2 = ResultNotifier<String>(data: '');
+      final combined = CombineLatestNotifier<String, String>(
+        [notifier1, notifier2],
+        combineData: (data) => data[0] + data[1],
+      );
+      notifier2.data = 'World';
 
-  Future<Result<String>> fetchResult(FutureNotifier<String> notifier) async {
-    fetchCount++;
-    await Future.delayed(const Duration(milliseconds: 10));
-    if (notifier.isCancelled || !notifier.isActive) throw CancelledException();
-    final result = await Future.delayed(delay, () => Data(id));
-    if (notifier.isCancelled || !notifier.isActive) throw CancelledException();
-    return result;
-  }
+      expect(combined.data, equals('Hello World'));
+    });
+
+    test('Combine different result type', () async {
+      final notifier1 = ResultNotifier<int>(data: 4);
+      final notifier2 = ResultNotifier<int>(data: 2);
+      final combined = CombineLatestNotifier<int, String>(
+        [notifier1, notifier2],
+        combineData: (data) => '${data[0]}${data[1]}',
+      )..refresh();
+
+      expect(combined.data, equals('42'));
+    });
+
+    test('Combine updated result', () async {
+      final notifier1 = ResultNotifier<String>(data: '');
+      final notifier2 = ResultNotifier<String>(data: '');
+      final combined = CombineLatestNotifier<String, String>(
+        [notifier1, notifier2],
+        combineData: (data) => data[0] + data[1],
+      )..refresh();
+
+      notifier1.value = Data('Hello ');
+      expect(combined.data, equals('Hello '));
+
+      notifier2.value = Data('World');
+      expect(combined.data, equals('Hello World'));
+    });
+
+    test('Combine loading result', () async {
+      final notifier1 = ResultNotifier<String>(data: '');
+      final notifier2 = ResultNotifier<String>(data: '');
+      final combined = CombineLatestNotifier<String, String>(
+        [notifier1, notifier2],
+        combineData: (data) => data[0] + data[1],
+      )..refresh();
+
+      notifier1.value = Data('Hello ');
+      notifier2.value = Data('World');
+      expect(combined.data, equals('Hello World'));
+      expect(combined.isLoading, isFalse);
+
+      notifier1.toLoading();
+      expect(combined.data, equals('Hello World'));
+      expect(combined.isLoading, isTrue);
+    });
+
+    test('Combine error result', () async {
+      final notifier1 = ResultNotifier<String>(data: '');
+      final notifier2 = ResultNotifier<String>(data: '');
+      final combined = CombineLatestNotifier<String, String>(
+        [notifier1, notifier2],
+        combineData: (data) => data[0] + data[1],
+      )..refresh();
+
+      notifier1.value = Data('Hello ');
+      notifier2.value = Data('World');
+      expect(combined.data, equals('Hello World'));
+      expect(combined.isError, isFalse);
+
+      notifier1.toError(error: 'error');
+      expect(combined.data, equals('Hello World'));
+      expect(combined.isError, isTrue);
+    });
+
+    test('Combine two', () async {
+      final notifier1 = ResultNotifier<String>(data: 'A');
+      final notifier2 = ResultNotifier<int>(data: 1);
+      final combined = CombineLatestNotifier.combine2(notifier1, notifier2, combineData: (a, b) => a + b.toString())
+        ..refresh();
+      expect(combined.data, equals('A1'));
+    });
+
+    test('Combine three', () async {
+      final notifier1 = ResultNotifier<String>(data: 'A');
+      final notifier2 = ResultNotifier<int>(data: 1);
+      final notifier3 = ResultNotifier<String>(data: 'B');
+      final combined = CombineLatestNotifier.combine3(
+        notifier1,
+        notifier2,
+        notifier3,
+        combineData: (a, b, c) => a + b.toString() + c,
+      )..refresh();
+      expect(combined.data, equals('A1B'));
+    });
+
+    test('Combine four', () async {
+      final notifier1 = ResultNotifier<String>(data: 'A');
+      final notifier2 = ResultNotifier<int>(data: 1);
+      final notifier3 = ResultNotifier<String>(data: 'B');
+      final notifier4 = ResultNotifier<int>(data: 2);
+      final combined = CombineLatestNotifier.combine4(
+        notifier1,
+        notifier2,
+        notifier3,
+        notifier4,
+        combineData: (a, b, c, d) => a + b.toString() + c + d.toString(),
+      )..refresh();
+      expect(combined.data, equals('A1B2'));
+    });
+
+    test('Combine five', () async {
+      final notifier1 = ResultNotifier<String>(data: 'A');
+      final notifier2 = ResultNotifier<int>(data: 1);
+      final notifier3 = ResultNotifier<String>(data: 'B');
+      final notifier4 = ResultNotifier<int>(data: 2);
+      final notifier5 = ResultNotifier<String>(data: 'C');
+      final combined = CombineLatestNotifier.combine5(
+        notifier1,
+        notifier2,
+        notifier3,
+        notifier4,
+        notifier5,
+        combineData: (a, b, c, d, e) => a + b.toString() + c + d.toString() + e,
+      )..refresh();
+      expect(combined.data, equals('A1B2C'));
+    });
+  });
+
+  group('EffectNotifier', () {
+    test('Simple effect', () async {
+      final sourceFetcher = AsyncFetcher(id: 'data');
+      final notifier = ResultNotifier<String>.future(sourceFetcher.fetch);
+      final effect = notifier.effect((_, input) => input.toUpperCase());
+      final result = await effect.refreshAwait();
+      expect(result, equals('DATA'));
+      expect(sourceFetcher.didFetch, isTrue);
+    });
+
+    test('Nested async effect', () async {
+      final sourceFetcher = AsyncFetcher(id: 'data');
+      final notifier = ResultNotifier<String>.future(sourceFetcher.fetch);
+      final effect = notifier.asyncEffect((_, input) async {
+        await Future.delayed(const Duration(milliseconds: 10));
+        return input.toUpperCase();
+      });
+      final result = await effect.refreshAwait();
+      expect(result, equals('DATA'));
+      expect(sourceFetcher.didFetch, isTrue);
+    });
+
+    test('Always data effect (sync)', () async {
+      final notifier = ResultNotifier<String>();
+      final effect = notifier.alwaysData('default');
+      expect(effect.data, equals('default'));
+      notifier.toLoading();
+      expect(effect.isData, isTrue);
+      expect(effect.data, equals('default'));
+      notifier.toError();
+      expect(effect.isData, isTrue);
+      expect(effect.data, equals('default'));
+      notifier.data = 'updatedData';
+      expect(effect.data, equals('updatedData'));
+    });
+
+    test('Always data effect (sync)', () async {
+      final notifier = ResultNotifier<String>();
+      final effect = notifier.alwaysData('default');
+      expect(effect.data, equals('default'));
+      notifier.toLoading();
+      expect(effect.isData, isTrue);
+      expect(effect.data, equals('default'));
+      notifier.toError();
+      expect(effect.isData, isTrue);
+      expect(effect.data, equals('default'));
+      notifier.data = 'updatedData';
+      expect(effect.data, equals('updatedData'));
+    });
+
+    test('Stream effect', () async {
+      final notifier = ResultNotifier<String>();
+      final effect = notifier.streamEffect((notifier, input) async* {
+        yield '$input!';
+        await Future.delayed(const Duration(milliseconds: 10));
+        yield '$input!'.toUpperCase();
+      });
+      notifier.data = 'default';
+      await effect.future;
+      expect(effect.data, equals('default!'));
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(effect.data, equals('DEFAULT!'));
+    });
+  });
+
+  group('StreamableResultNotifierMixin', () {
+    test('To stream', () async {
+      final notifier = StreamableNotifier<String>(data: '');
+      final List<String> results = [];
+      notifier.stream.listen((event) {
+        results.add(event.data ?? '-');
+      });
+      notifier.data = 'Streams ';
+      notifier.data = 'are ';
+      notifier.data = 'just ';
+      notifier.data = 'streamy!';
+      await Future.delayed(const Duration(milliseconds: 10));
+      expect(results.join(), equals('Streams are just streamy!'));
+    });
+  });
 }

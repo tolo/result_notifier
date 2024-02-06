@@ -1,17 +1,18 @@
 import 'dart:async';
 
-import 'exceptions.dart';
+import 'package:flutter/cupertino.dart';
+
 import 'result.dart';
 import 'result_notifier.dart';
 
 /// Signature for functions that fetches data asynchronously for an [FutureNotifier].
-typedef FetchAsync<T> = FutureOr<T> Function(FutureNotifier<T>);
+typedef FetchAsync<T> = FutureOr<T> Function(ResultNotifier<T> notifier);
 
 /// Signature for functions that fetches data asynchronously for an [FutureNotifier], and returns a [Result].
 ///
 /// Use this fetcher function with the [FutureNotifier.result] constructor, when you need to control the result type in
 /// the fetch operation.
-typedef FetchResultAsync<T> = FutureOr<Result<T>> Function(FutureNotifier<T>);
+typedef FetchResultAsync<T> = FutureOr<Result<T>> Function(ResultNotifier<T> notifier);
 
 /// ResultNotifier subclass that supports fetching data asynchronously, on demand.
 ///
@@ -61,51 +62,57 @@ class FutureNotifier<T> extends ResultNotifier<T> {
     super.refreshOnError,
   }) : super(onFetch: _onFetchResult(fetch));
 
+  /// Creates a FutureNotifier that implements customized fetching behavior, possibly by using [performFetch].
+  ///
+  /// Note: this constructor is primarily provided for subclasses.
+  ///
+  /// {@macro result_notifier.constructor}
+  FutureNotifier.customFetch({
+    super.data,
+    super.result,
+    super.expiration,
+    super.onFetch,
+    super.onReset,
+    super.onErrorReturn,
+    super.autoReset,
+    super.refreshOnError,
+  });
+
   static void Function(ResultNotifier<T>) _onFetch<T>(FetchAsync<T> fetch) {
-    FutureOr<Result<T>> fetchResult(FutureNotifier<T> not) async => Data(await fetch(not));
-    return (not) => (not as FutureNotifier<T>)._performFetch(fetchResult);
+    FutureOr<Result<T>> fetchResult(ResultNotifier<T> not) async => Data(await fetch(not));
+    return (not) => (not as FutureNotifier<T>).performFetch(fetchResult);
   }
 
   static void Function(ResultNotifier<T>) _onFetchResult<T>(FetchResultAsync<T> fetch) {
-    return (not) => (not as FutureNotifier<T>)._performFetch(fetch);
+    return (not) => (not as FutureNotifier<T>).performFetch(fetch);
   }
 
-  Object? _currentFetch;
-
-  @override
-  void cancel({Result<T>? result, bool always = false}) {
-    _currentFetch = null;
-    super.cancel(result: result, always: always);
-  }
-
-  void _performFetch(FetchResultAsync<T> fetch) {
-    FutureOr<Result<T>> performFetch() async {
-      late final currentFetch = _currentFetch;
-      final result = await fetch(this);
-      if (currentFetch == _currentFetch) {
-        return result;
-      } else {
-        throw CancelledException();
-      }
-    }
-
-    _currentFetch = Object();
-    setResultAsyncIgnore(() => performFetch());
+  /// Fetches data asynchronously using the provided `fetcher` function.
+  ///
+  /// This method is used when setting up [onFetch] for FutureNotifier, and is invoked by [refresh]. It should normally
+  /// not be invoked directly.
+  @protected
+  void performFetch(FetchResultAsync<T> fetch) {
+    setResultAsync(() => fetch(this)).ignore();
   }
 }
 
 /// Signature for functions that fetches streaming data for a [StreamNotifier].
-typedef FetchStream<T> = Stream<T> Function(StreamNotifier<T>);
+typedef FetchStream<T> = Stream<T> Function(StreamNotifier<T> notifier);
 
 /// Signature for functions that fetches streaming [Result]s for a [StreamNotifier].
 ///
 /// Use this fetcher function with the [StreamNotifier.result] constructor, when you need to control the result type in
 /// the fetch operation.
-typedef FetchResultStream<T> = Stream<Result<T>> Function(StreamNotifier<T>);
+typedef FetchResultStream<T> = Stream<Result<T>> Function(StreamNotifier<T> notifier);
 
 /// ResultNotifier subclass that supports fetching streaming data.
+///
+/// Whenever a refresh is needed (see [refresh]), the fetch function will be invoked to fetch a new Stream of data. The
+/// notifier will then subscribe to that Stream and update its value whenever new data or errors are emitted.
 class StreamNotifier<T> extends ResultNotifier<T> {
-  // TODO: Needs tests
+  // TODO: Better docs.
+
   /// Creates a StreamNotifier that uses the provided `fetch` function to fetch a Stream of data on each refresh.
   ///
   /// The fetched Stream will be subscribed to on each fetch, after unsubscribing from any previous Stream. Each data or
@@ -136,51 +143,73 @@ class StreamNotifier<T> extends ResultNotifier<T> {
     super.onErrorReturn,
   }) : super(onFetch: _onFetchResult(fetch));
 
+  /// Creates a StreamNotifier that implements customized fetching behavior, possibly by using [performFetch].
+  ///
+  /// Note: this constructor is primarily provided for subclasses.
+  ///
+  /// {@macro result_notifier.constructor}
+  StreamNotifier.customFetch({
+    super.data,
+    super.result,
+    super.expiration,
+    super.onFetch,
+    super.onReset,
+    super.onErrorReturn,
+    super.autoReset,
+    super.refreshOnError,
+  });
+
   static void Function(ResultNotifier<T>) _onFetch<T>(FetchStream<T> fetch) {
     Stream<Result<T>> fetchResult(StreamNotifier<T> not) => fetch(not).map((event) => Data(event));
-    return (not) => (not as StreamNotifier<T>)._performFetch(fetchResult);
+    return (not) => (not as StreamNotifier<T>).performFetch(fetchResult);
   }
 
   static void Function(ResultNotifier<T>) _onFetchResult<T>(FetchResultStream<T> fetch) {
-    return (not) => (not as StreamNotifier<T>)._performFetch(fetch);
+    return (not) => (not as StreamNotifier<T>).performFetch(fetch);
   }
 
   StreamSubscription? _subscription;
 
   @override
   void dispose() {
-    _subscription?.cancel();
+    final subscription = _subscription;
+    _subscription = null;
+    subscription?.cancel();
     super.dispose();
   }
 
   @override
-  void cancel({Result<T>? result, bool always = false}) {
-    _subscription?.cancel();
+  void cancel({bool always = false}) {
+    final subscription = _subscription;
     _subscription = null;
-    super.cancel(result: result, always: always);
+    subscription?.cancel();
+    super.cancel(always: (subscription != null) || always);
   }
 
-  void _performFetch(FetchResultStream<T> fetch) {
+  /// Fetches data asynchronously by subscribing to the Stream returned by the `fetch` function. If any existing stream
+  /// subscription is active, it will be cancelled before subscribing to the new stream. Each data or error event will
+  /// then be passed to this notifier. Before subsribing to the new stream, the notifier will be set to [Loading].
+  ///
+  /// This method is used when setting up [onFetch] for StreamNotifier, and is invoked by [refresh]. It should normally
+  /// not be invoked directly.
+  @protected
+  void performFetch(FetchResultStream<T> fetch) {
     _subscription?.cancel();
+    toLoading();
+
     late final StreamSubscription<Result<T>> sub; // ignore: cancel_subscriptions
     sub = fetch(this).listen(
-      (data) {
-        if (sub == _subscription) setResultAsyncIgnore(() => data);
+      (streamResult) {
+        if (sub == _subscription && isActive) {
+          value = streamResult;
+        }
       },
       onError: (Object error, StackTrace stackTrace) {
-        if (sub == _subscription) {
-          setResultAsyncIgnore(() => Future<Result<T>>.error(error, stackTrace));
+        if (sub == _subscription && isActive) {
+          toError(error: error, stackTrace: stackTrace);
         }
       },
     );
     _subscription = sub;
-  }
-}
-
-extension _ResultNotifierAsyncExtension<T> on ResultNotifier<T> {
-  Future<void> setResultAsyncIgnore(FutureOr<Result<T>> Function() fetch) async {
-    try {
-      await setResultAsync(fetch);
-    } catch (e) {/* Ignoring */}
   }
 }
