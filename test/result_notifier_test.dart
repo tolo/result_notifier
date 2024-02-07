@@ -36,6 +36,39 @@ void main() {
       expect(fetcher.didFetch, isFalse);
     });
 
+    test('toData (existing data)', () {
+      final fetcher = Fetcher();
+      final notifier = ResultNotifier<String>(data: 'data', onFetch: fetcher.onFetch);
+      notifier.toLoading();
+      expect(notifier.data, equals('data'));
+      expect(notifier.isLoading, true);
+      notifier.toData();
+      expect(notifier.isData, true);
+      expect(notifier.isStale, false);
+      expect(notifier.isLoading, false);
+      expect(notifier.isError, false);
+      expect(notifier.data, equals('data'));
+      expect(fetcher.didFetch, isFalse);
+    });
+
+    test('toData (explicit data)', () {
+      final fetcher = Fetcher();
+      final notifier = ResultNotifier<String>(onFetch: fetcher.onFetch);
+      notifier.toData(data: 'default');
+      expect(notifier.isData, true);
+      expect(notifier.data, equals('default'));
+      notifier.toLoading();
+      expect(notifier.data, equals('default'));
+      expect(notifier.isLoading, true);
+      notifier.toData(data: 'data');
+      expect(notifier.isData, true);
+      expect(notifier.isStale, false);
+      expect(notifier.isLoading, false);
+      expect(notifier.isError, false);
+      expect(notifier.data, equals('data'));
+      expect(fetcher.didFetch, isFalse);
+    });
+
     test('toData (orElse)', () {
       final fetcher = Fetcher();
       final notifier = ResultNotifier<String>(onFetch: fetcher.onFetch);

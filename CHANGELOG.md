@@ -13,4 +13,7 @@
 * Updated API of CombineLatestNotifier (changed constructor and added static factory methods) and removed @expermimental annotation.
 * Renamed ChainedNotifier to EffectNotifier and removed @expermimental annotation.
 * Added effect methods to `ResultNotifier`.
- 
+
+## 0.2.1
+
+* Fixed issue with `Result.toData` (and thus `ResultNotifier.toData`) not using the `data` parameter correctly.

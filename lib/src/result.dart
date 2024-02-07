@@ -57,7 +57,7 @@ sealed class Result<T> {
   /// produce data, the value will be set to [Error.noData].
   /// {@endtemplate}
   Result<T> toData({T? data, T Function()? orElse, DateTime? lastUpdate}) {
-    if (hasData || orElse != null) {
+    if (hasData || data != null || orElse != null) {
       return Data(
         data ?? this.data ?? orElse!.call(),
         lastUpdate: lastUpdate ?? DateTime.now(),
