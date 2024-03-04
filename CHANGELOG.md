@@ -37,3 +37,7 @@
   (`ResourceProvider.custom`) for subclasses. 
 * Made `dispose` method in `ResourceProvider` optional, and added default implementation that calls `dispose()` on the 
   resource.
+
+## 0.3.0+1
+
+* Just documentation updates.

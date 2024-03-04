@@ -1,6 +1,6 @@
 name: result_notifier
 description: Pragmatic state management for Flutter, based on familiar and platform-native concepts
-version: 0.3.0
+version: 0.3.0+1
 homepage: https://github.com/tolo/result_notifier
 
 environment:
