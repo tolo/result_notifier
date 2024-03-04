@@ -511,22 +511,33 @@ void main() {
     test('Combine two', () async {
       final notifier1 = ResultNotifier<String>(data: 'A');
       final notifier2 = ResultNotifier<int>(data: 1);
-      final combined = CombineLatestNotifier.combine2(notifier1, notifier2, combineData: (a, b) => a + b.toString())
-        ..refresh();
+      String combineData(String a, int b) => a + b.toString();
+
+      final combined = CombineLatestNotifier.combine2(notifier1, notifier2, combineData: combineData)..refresh();
       expect(combined.data, equals('A1'));
+
+      // Test the corresponding Record function
+      final combined2 = (notifier1, notifier2).combineData(combineData);
+      expect(combined2, equals('A1'));
     });
 
     test('Combine three', () async {
       final notifier1 = ResultNotifier<String>(data: 'A');
       final notifier2 = ResultNotifier<int>(data: 1);
       final notifier3 = ResultNotifier<String>(data: 'B');
+      String combineData(String a, int b, String c) => a + b.toString() + c;
+
       final combined = CombineLatestNotifier.combine3(
         notifier1,
         notifier2,
         notifier3,
-        combineData: (a, b, c) => a + b.toString() + c,
+        combineData: combineData,
       )..refresh();
       expect(combined.data, equals('A1B'));
+
+      // Test the corresponding Record function
+      final combined3 = (notifier1, notifier2, notifier3).combineData(combineData);
+      expect(combined3, equals('A1B'));
     });
 
     test('Combine four', () async {
@@ -534,14 +545,20 @@ void main() {
       final notifier2 = ResultNotifier<int>(data: 1);
       final notifier3 = ResultNotifier<String>(data: 'B');
       final notifier4 = ResultNotifier<int>(data: 2);
+      String combineData(String a, int b, String c, int d) => a + b.toString() + c + d.toString();
+
       final combined = CombineLatestNotifier.combine4(
         notifier1,
         notifier2,
         notifier3,
         notifier4,
-        combineData: (a, b, c, d) => a + b.toString() + c + d.toString(),
+        combineData: combineData,
       )..refresh();
       expect(combined.data, equals('A1B2'));
+
+      // Test the corresponding Record function
+      final combined4 = (notifier1, notifier2, notifier3, notifier4).combineData(combineData);
+      expect(combined4, equals('A1B2'));
     });
 
     test('Combine five', () async {
@@ -550,15 +567,21 @@ void main() {
       final notifier3 = ResultNotifier<String>(data: 'B');
       final notifier4 = ResultNotifier<int>(data: 2);
       final notifier5 = ResultNotifier<String>(data: 'C');
+      String combineData(String a, int b, String c, int d, String e) => a + b.toString() + c + d.toString() + e;
+
       final combined = CombineLatestNotifier.combine5(
         notifier1,
         notifier2,
         notifier3,
         notifier4,
         notifier5,
-        combineData: (a, b, c, d, e) => a + b.toString() + c + d.toString() + e,
+        combineData: combineData,
       )..refresh();
       expect(combined.data, equals('A1B2C'));
+
+      // Test the corresponding Record function
+      final combined5 = (notifier1, notifier2, notifier3, notifier4, notifier5).combineData(combineData);
+      expect(combined5, equals('A1B2C'));
     });
   });
 
@@ -634,12 +657,130 @@ void main() {
       notifier.stream.listen((event) {
         results.add(event.data ?? '-');
       });
+      await Future.delayed(const Duration(milliseconds: 1));
       notifier.data = 'Streams ';
       notifier.data = 'are ';
       notifier.data = 'just ';
       notifier.data = 'streamy!';
-      await Future.delayed(const Duration(milliseconds: 10));
+      await Future.delayed(const Duration(milliseconds: 1));
       expect(results.join(), equals('Streams are just streamy!'));
+    });
+
+    test('To dataStream', () async {
+      final notifier = StreamableNotifier<String>(data: 'Value');
+      final List<String> results = [];
+      notifier.dataStream.listen((data) {
+        results.add(data);
+      });
+      await Future.delayed(const Duration(milliseconds: 1));
+      notifier.data = 'Streams ';
+      notifier.data = 'are ';
+      notifier.data = 'just ';
+      notifier.data = 'streamy!';
+      await Future.delayed(const Duration(milliseconds: 1));
+      expect(results.join(), equals('ValueStreams are just streamy!'));
+    });
+  });
+
+  group('Extensions', () {
+    test('ResultNotifier iterable combine', () async {
+      final notifier1 = ResultNotifier<String>();
+      final notifier2 = ResultNotifier<String>(data: 'World');
+      Result<String> result = [notifier1, notifier2].combine((data) => '${data[0]}${data[1]}');
+      expect(result.isLoading, isTrue);
+      expect(result.data, isNull);
+
+      notifier1.data = 'Hello ';
+      result = [notifier1, notifier2].combine((data) => '${data[0]}${data[1]}');
+      expect(result.isData, isTrue);
+      expect(result.data, equals('Hello World'));
+
+      notifier2.toError();
+      result = [notifier1, notifier2].combine((data) => '${data[0]}${data[1]}');
+      expect(result.isError, isTrue);
+      expect(result.data, equals('Hello World'));
+
+      notifier1.toLoading();
+      notifier2.toData();
+      result = [notifier1, notifier2].combine((data) => '${data[0]}${data[1]}');
+      expect(result.isLoading, isTrue);
+      expect(result.data, equals('Hello World'));
+    });
+
+    test('ResultNotifier iterable combineData', () async {
+      final notifier1 = ResultNotifier<String>();
+      final notifier2 = ResultNotifier<String>(data: 'World');
+      String? result = [notifier1, notifier2].combineData((data) => '${data[0]}${data[1]}');
+      expect(result, isNull);
+
+      notifier1.data = 'Hello ';
+      result = [notifier1, notifier2].combineData((data) => '${data[0]}${data[1]}');
+      expect(result, equals('Hello World'));
+
+      notifier2.toError();
+      result = [notifier1, notifier2].combineData((data) => '${data[0]}${data[1]}');
+      expect(result, equals('Hello World'));
+
+      notifier1.toLoading();
+      notifier2.toData();
+      result = [notifier1, notifier2].combineData((data) => '${data[0]}${data[1]}');
+      expect(result, equals('Hello World'));
+    });
+
+    test('ResultNotifier result status', () async {
+      final notifier1 = ResultNotifier<String>();
+      final notifier2 = ResultNotifier<String>(data: 'World');
+
+      expect([notifier1, notifier2].hasData(), isTrue);
+      expect([notifier1, notifier2].hasAllData(), isFalse);
+
+      expect([notifier1, notifier2].isLoading(), isTrue);
+      expect([notifier1, notifier2].isAllLoading(), isFalse);
+      notifier2.toLoading();
+      expect([notifier1, notifier2].isAllLoading(), isTrue);
+
+      notifier2.toData();
+      expect([notifier1, notifier2].isData(), isTrue);
+      expect([notifier1, notifier2].isAllData(), isFalse);
+      notifier1.data = 'Hello ';
+      expect([notifier1, notifier2].isAllData(), isTrue);
+
+      notifier1.toError();
+      expect([notifier1, notifier2].isError(), isTrue);
+      expect([notifier1, notifier2].isAllError(), isFalse);
+      notifier2.toError();
+      expect([notifier1, notifier2].isAllError(), isTrue);
+
+      expect([notifier1, notifier2].hasData(), isTrue);
+      expect([notifier1, notifier2].hasAllData(), isTrue);
+    });
+
+    test('Result result status', () async {
+      final notifier1 = ResultNotifier<String>();
+      final notifier2 = ResultNotifier<String>(data: 'World');
+
+      expect([notifier1.result, notifier2.result].hasData(), isTrue);
+      expect([notifier1.result, notifier2.result].hasAllData(), isFalse);
+
+      expect([notifier1.result, notifier2.result].isLoading(), isTrue);
+      expect([notifier1.result, notifier2.result].isAllLoading(), isFalse);
+      notifier2.toLoading();
+      expect([notifier1.result, notifier2.result].isAllLoading(), isTrue);
+
+      notifier2.toData();
+      expect([notifier1.result, notifier2.result].isData(), isTrue);
+      expect([notifier1.result, notifier2.result].isAllData(), isFalse);
+      notifier1.data = 'Hello ';
+      expect([notifier1.result, notifier2.result].isAllData(), isTrue);
+
+      notifier1.toError();
+      expect([notifier1.result, notifier2.result].isError(), isTrue);
+      expect([notifier1.result, notifier2.result].isAllError(), isFalse);
+      notifier2.toError();
+      expect([notifier1.result, notifier2.result].isAllError(), isTrue);
+
+      expect([notifier1.result, notifier2.result].hasData(), isTrue);
+      expect([notifier1.result, notifier2.result].hasAllData(), isTrue);
     });
   });
 }

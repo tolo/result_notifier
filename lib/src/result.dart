@@ -2,7 +2,28 @@ import 'package:flutter/foundation.dart';
 
 import 'exceptions.dart';
 
-/// Result type base class
+/// Result is the base class of an enumerable set of subtypes that represent the different states involved in fetching
+/// data for a [ResultNotifier].
+///
+/// A result can be in one of the following states:
+/// - **[Loading]**: Represents a loading/reloading state, along with the *previous* data, if any.
+/// - **[Data]**: The result contains some concrete data.
+/// - **[Error]**: Represents an error, along with the *previous* data, if any.
+///
+/// There is also a special [Initial] state, which is used as a default state when no other state has been set. This
+/// state inherits from [Loading] and is handled as such in most cases.
+///
+/// `Result` provides a number of methods for checking (properties of) the current state as well as converting between
+/// the different states. It also provides a number of methods for performing actions based on the current state, for
+/// instance [when]. Example:
+///
+/// ```
+/// result.when(
+///   loading: (data) => const CircularProgressIndicator(),
+///   error: (error, stackTrace, data) => Text('Error: $error'),
+///   data: (data) => Text(data),
+/// ),
+/// ```
 @immutable
 sealed class Result<T> {
   Result._({DateTime? lastUpdate}) : lastUpdate = lastUpdate ?? DateTime.now();
@@ -10,37 +31,56 @@ sealed class Result<T> {
   /// The last data, if any.
   T? get data;
 
+  /// {@template result.lastUpdate}
   /// The last time the result was updated.
+  /// {@endtemplate}
   final DateTime lastUpdate;
 
   /// The last error, if any.
   Object? get error => null;
 
+  /// {@template result.hasData}
   /// Checks if the result contains data, regardless of the result type. Note that this is different from [isData].
+  /// {@endtemplate}
   bool get hasData => data != null;
 
+  /// {@template result.isInitial}
   /// Checks if the the result is the [Initial] loading state.
+  /// {@endtemplate}
   bool get isInitial => this is Initial<T>;
 
+  /// {@template result.isLoading}
   /// Checks if the the result is [Loading]. Note that the initial state ([Initial]) is also interpreted as a loading state.
+  /// {@endtemplate}
   bool get isLoading => this is Loading<T>;
 
+  /// {@template result.isLoadingData}
   /// Checks if the data is currently being loaded, i.e. the current state is [Loading] but not [Initial].
+  /// {@endtemplate}
   bool get isLoadingData => isLoading && !isInitial;
 
+  /// {@template result.isReloading}
   /// Checks if data is currently being reloaded, i.e. the current state is [Loading] and [hasData].
+  /// {@endtemplate}
   bool get isReloading => isLoadingData && hasData;
 
+  /// {@template result.isData}
   /// Checks if the result is [Data]. Note that this is different from if this notifier currently contains data
   /// (i.e. [hasData]).
+  /// {@endtemplate}
   bool get isData => this is Data<T>;
 
+  /// {@template result.isError}
   /// Checks if the current state is [Error].
+  /// {@endtemplate}
   bool get isError => this is Error<T>;
 
+  /// {@template result.isCancelled}
   /// Checks if the current state is [Error] and the error is a [CancelledException].
+  /// {@endtemplate}
   bool get isCancelled => false;
 
+  /// Creates a copy of this result with the provided values.
   Result<T> copyWith({T? data, DateTime? lastUpdate});
 
   /// Creates a stale copy of this result, meaning [lastUpdate] will be set to zero ms from "epoch".
@@ -99,7 +139,7 @@ sealed class Result<T> {
     );
   }
 
-  /// {@template result.toError}
+  /// {@template result.toCancelled}
   /// Attempts to convert the result to cancellation [Error].
   /// {@endtemplate}
   Result<T> toCancelled({T? data, DateTime? lastUpdate}) {

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'async_notifier.dart';
+import 'extensions.dart';
 import 'result.dart';
 import 'result_notifier.dart';
 
@@ -8,22 +9,36 @@ import 'result_notifier.dart';
 /// into a single value.
 typedef Combine<S, R> = R Function(List<S> data);
 
-// TODO: Perhaps add CombineResult
-//typedef CombineResult<S, R> = Result<R> Function(List<Result<S>> data);
+/// Signature for functions used by [CombineLatestNotifier] to combine [Result]s from a number of source [ResultNotifier]s
+/// into a single value.
+typedef CombineResult<S, R> = Result<R> Function(Iterable<Result<S>> data);
 
 /// Combines the data of a number of source [ResultNotifier]s into a single data value, held by this notifier.
 ///
 /// The resulting data is produced by the specified [combineData] function, which is called whenever one of the source
 /// notifiers updates its data.
+///
+/// See also:
+/// - [ResultIterableEffects] which provides similar functionality for [Iterable]s of [Result]s.
+/// - [ResultListenableIterableEffects] which provides similar functionality for [Iterable]s of [ResultListenable]s.
+/// - [ResultTuple] which provides similar functionality for tuples of [Result]s.
+/// - [ResultListenableTuple] which provides similar functionality for tuples of [ResultListenable]s.
 class CombineLatestNotifier<S, R> extends ResultNotifier<R> with EffectNotifier<S, R> {
   // TODO: More docs
 
-  /// Constructs a [CombineLatestNotifier] that combines the data from the provided source [notifiers], using the
-  /// specified [combineData] function.
+  /// Constructs a [CombineLatestNotifier] that combines the data from the provided source `notifiers`, using the
+  /// specified `combineData` function.
+  ///
+  /// If the source notifiers did not all contain data, the result of this notifier will be set to reflect this - see
+  /// [ResultIterableEffects.combine] for more information.
+  ///
+  /// If [immediate] is true, the effect will be executed immediately after the notifier is created.
+  /// If [ignoreLoading] is true, any [Loading] state of the input notifiers will be ignored, and the previous result
+  /// will be kept.
   ///
   /// {@macro result_notifier.constructor}
   CombineLatestNotifier(
-    Iterable<ResultNotifier<S>> notifiers, {
+    Iterable<ResultListenable<S>> notifiers, {
     required Combine<S, R> combineData,
     super.data,
     super.result,
@@ -32,20 +47,62 @@ class CombineLatestNotifier<S, R> extends ResultNotifier<R> with EffectNotifier<
     super.onErrorReturn,
     super.autoReset,
     super.refreshOnError,
+    bool immediate = false,
     this.ignoreLoading = false,
-  })  : _notifiers = notifiers,
-        _combineData = combineData {
-    // _combineValues(); // TODO: Should we combine immediately?
+  }) : super(onFetch: _effect(notifiers, combineData)) {
+    if (immediate) refresh(force: true);
     for (final source in notifiers) {
       _dependOnSource(source);
     }
   }
 
+  /// Constructs a [CombineLatestNotifier] that combines the results from the provided source `notifiers`, using the
+  /// specified `combineResult` function.
+  ///
+  /// If [immediate] is true, the effect will be executed immediately after the notifier is created.
+  /// If [ignoreLoading] is true, any [Loading] state of the input notifiers will be ignored, and the previous result
+  /// will be kept.
+  ///
+  /// {@macro result_notifier.constructor}
+  CombineLatestNotifier.result(
+    Iterable<ResultListenable<S>> notifiers, {
+    required CombineResult<S, R> combineResult,
+    super.data,
+    super.result,
+    super.expiration,
+    super.onReset,
+    super.onErrorReturn,
+    super.autoReset,
+    super.refreshOnError,
+    bool immediate = false,
+    this.ignoreLoading = false,
+  }) : super(onFetch: _resultEffect(notifiers, combineResult)) {
+    if (immediate) refresh(force: true);
+    for (final source in notifiers) {
+      _dependOnSource(source);
+    }
+  }
+
+  static ResultNotifierCallback<R> _effect<S, R>(Iterable<ResultListenable<S>> sources, Combine<S, R> combineData) {
+    return (not) {
+      not.value = sources.combine(combineData);
+    };
+  }
+
+  static ResultNotifierCallback<R> _resultEffect<S, R>(
+      Iterable<ResultListenable<S>> sources, CombineResult<S, R> combineResult) {
+    return (not) {
+      not.value = combineResult(sources.map((not) => not.value));
+    };
+  }
+
   /// Constructs a [CombineLatestNotifier] that combines the data from the provided notifiers using the specified
   /// [combineData] function.
+  ///
+  /// See [CombineLatestNotifier.new].
   static CombineLatestNotifier<dynamic, R> combine2<A, B, R>(
-    ResultNotifier<A> notifierA,
-    ResultNotifier<B> notifierB, {
+    ResultListenable<A> notifierA,
+    ResultListenable<B> notifierB, {
     required R Function(A a, B b) combineData,
     R? data,
     Result<R>? result,
@@ -73,9 +130,9 @@ class CombineLatestNotifier<S, R> extends ResultNotifier<R> with EffectNotifier<
   /// Constructs a [CombineLatestNotifier] that combines the data from the provided notifiers using the specified
   /// [combineData] function.
   static CombineLatestNotifier<dynamic, R> combine3<A, B, C, R>(
-    ResultNotifier<A> notifierA,
-    ResultNotifier<B> notifierB,
-    ResultNotifier<C> notifierC, {
+    ResultListenable<A> notifierA,
+    ResultListenable<B> notifierB,
+    ResultListenable<C> notifierC, {
     required R Function(A a, B b, C c) combineData,
     R? data,
     Result<R>? result,
@@ -103,10 +160,10 @@ class CombineLatestNotifier<S, R> extends ResultNotifier<R> with EffectNotifier<
   /// Constructs a [CombineLatestNotifier] that combines the data from the provided notifiers using the specified
   /// [combineData] function.
   static CombineLatestNotifier<dynamic, R> combine4<A, B, C, D, R>(
-    ResultNotifier<A> notifierA,
-    ResultNotifier<B> notifierB,
-    ResultNotifier<C> notifierC,
-    ResultNotifier<D> notifierD, {
+    ResultListenable<A> notifierA,
+    ResultListenable<B> notifierB,
+    ResultListenable<C> notifierC,
+    ResultListenable<D> notifierD, {
     required R Function(A a, B b, C c, D d) combineData,
     R? data,
     Result<R>? result,
@@ -134,11 +191,11 @@ class CombineLatestNotifier<S, R> extends ResultNotifier<R> with EffectNotifier<
   /// Constructs a [CombineLatestNotifier] that combines the data from the specified [notifiers] using the specified
   /// [combineData] function.
   static CombineLatestNotifier<dynamic, R> combine5<A, B, C, D, E, R>(
-    ResultNotifier<A> notifierA,
-    ResultNotifier<B> notifierB,
-    ResultNotifier<C> notifierC,
-    ResultNotifier<D> notifierD,
-    ResultNotifier<E> notifierE, {
+    ResultListenable<A> notifierA,
+    ResultListenable<B> notifierB,
+    ResultListenable<C> notifierC,
+    ResultListenable<D> notifierD,
+    ResultListenable<E> notifierE, {
     required R Function(A a, B b, C c, D d, E e) combineData,
     R? data,
     Result<R>? result,
@@ -166,39 +223,21 @@ class CombineLatestNotifier<S, R> extends ResultNotifier<R> with EffectNotifier<
   /// If true, any [Loading] state of the input notifiers will be ignored, and the previous result will be kept.
   @override
   final bool ignoreLoading;
-
-  /// Function that combines data from the input notifiers into a single value.
-  final Combine<S, R> _combineData;
-
-  final Iterable<ResultNotifier<S>> _notifiers;
-
-  @override
-  void fetchData() {
-    final List<S> notifierData = [];
-    for (final notifier in _notifiers) {
-      final data = notifier.dataOrNull;
-      if (data != null) {
-        notifierData.add(data);
-      } else {
-        break;
-      }
-    }
-    if (notifierData.length == _notifiers.length) {
-      value = Data(_combineData(notifierData));
-    } else if (!isLoading) {
-      toLoading();
-    }
-  }
 }
 
 /// Result notifier that executes an "effect" whenever a source [ResultNotifier] changes value.
+///
+/// The effect is implemented by the fetch function provided when creating this notifier, or by overriding the
+/// [fetchData] method in a subclass.
+///
+/// See for instance [SyncEffectNotifier] and [AsyncEffectNotifier] for concrete implementations.
 mixin EffectNotifier<S, R> on ResultNotifier<R> {
   final List<Disposer> _disposables = [];
 
   /// If true, any [Loading] state of the input notifiers will be ignored, and the previous result will be kept.
   bool get ignoreLoading;
 
-  void _dependOnSource(ResultNotifier<S> source) {
+  void _dependOnSource(ResultListenable<S> source) {
     _disposables.add(source.onResult(_onSourceResult));
   }
 
@@ -227,7 +266,7 @@ mixin EffectNotifier<S, R> on ResultNotifier<R> {
     );
   }
 
-  void _withSourceData(ResultNotifier<S> source, void Function(S sourceData) dataEffect) {
+  void _withSourceData(ResultListenable<S> source, void Function(S sourceData) dataEffect) {
     source.value.whenOr(
       data: dataEffect,
     );
@@ -246,14 +285,20 @@ typedef ResultEffect<S, R> = Result<R> Function(SyncEffectNotifier<S, R> notifie
 ///
 /// The provided [effect] function is executed synchronously, whenever the source notifier produces new data. The data
 /// of the source notifier will be passed as input to the effect function.
+///
+/// See also [AsyncEffectNotifier].
 class SyncEffectNotifier<S, R> extends ResultNotifier<R> with EffectNotifier<S, R> {
   // TODO: More docs
 
   /// Creates a SyncEffectNotifier.
   ///
+  /// If [immediate] is true, the effect will be executed immediately after the notifier is created.
+  /// If [ignoreLoading] is true, any [Loading] state of the input notifiers will be ignored, and the previous result
+  /// will be kept.
+  ///
   /// {@macro result_notifier.constructor}
   SyncEffectNotifier(
-    ResultNotifier<S> source, {
+    ResultListenable<S> source, {
     required Effect<S, R> effect,
     super.data,
     super.result,
@@ -262,16 +307,22 @@ class SyncEffectNotifier<S, R> extends ResultNotifier<R> with EffectNotifier<S, 
     super.onErrorReturn,
     super.autoReset,
     super.refreshOnError,
+    bool immediate = false,
     this.ignoreLoading = false,
   }) : super(onFetch: _runEffect(source, effect)) {
+    if (immediate) refresh(force: true);
     _dependOnSource(source);
   }
 
   /// Creates a SyncEffectNotifier.
   ///
+  /// If [immediate] is true, the effect will be executed immediately after the notifier is created.
+  /// If [ignoreLoading] is true, any [Loading] state of the input notifiers will be ignored, and the previous result
+  /// will be kept.
+  ///
   /// {@macro result_notifier.constructor}
   SyncEffectNotifier.result(
-    ResultNotifier<S> source, {
+    ResultListenable<S> source, {
     required ResultEffect<S, R> effect,
     super.data,
     super.result,
@@ -280,12 +331,14 @@ class SyncEffectNotifier<S, R> extends ResultNotifier<R> with EffectNotifier<S, 
     super.onErrorReturn,
     super.autoReset,
     super.refreshOnError,
+    bool immediate = false,
     this.ignoreLoading = false,
   }) : super(onFetch: _runResultEffect(source, effect)) {
+    if (immediate) refresh(force: true);
     _dependOnSource(source);
   }
 
-  static ResultNotifierCallback<R> _runEffect<S, R>(ResultNotifier<S> source, Effect<S, R> effect) {
+  static ResultNotifierCallback<R> _runEffect<S, R>(ResultListenable<S> source, Effect<S, R> effect) {
     return (not) {
       (not as SyncEffectNotifier<S, R>)._withSourceData(source, (sourceData) {
         not.data = effect(not, sourceData);
@@ -293,7 +346,7 @@ class SyncEffectNotifier<S, R> extends ResultNotifier<R> with EffectNotifier<S, 
     };
   }
 
-  static ResultNotifierCallback<R> _runResultEffect<S, R>(ResultNotifier<S> source, ResultEffect<S, R> effect) {
+  static ResultNotifierCallback<R> _runResultEffect<S, R>(ResultListenable<S> source, ResultEffect<S, R> effect) {
     return (not) {
       (not as SyncEffectNotifier<S, R>)._withSourceData(source, (sourceData) {
         not.value = effect(not, sourceData);
@@ -317,14 +370,20 @@ typedef AsyncResultEffect<S, R> = Future<Result<R>> Function(ResultNotifier<R> n
 ///
 /// The provided [effect] function is executed asynchronously whenever the source notifier produces new data. The data
 /// of the source notifier will be passed as input to the effect function.
+///
+/// See also [SyncEffectNotifier].
 class AsyncEffectNotifier<S, R> extends FutureNotifier<R> with EffectNotifier<S, R> {
   // TODO: More docs
 
   /// Creates a AsyncEffectNotifier.
   ///
+  /// If [immediate] is true, the effect will be executed immediately after the notifier is created.
+  /// If [ignoreLoading] is true, any [Loading] state of the input notifiers will be ignored, and the previous result
+  /// will be kept.
+  ///
   /// {@macro result_notifier.constructor}
   AsyncEffectNotifier(
-    ResultNotifier<S> source, {
+    ResultListenable<S> source, {
     required AsyncEffect<S, R> effect,
     super.data,
     super.result,
@@ -333,16 +392,22 @@ class AsyncEffectNotifier<S, R> extends FutureNotifier<R> with EffectNotifier<S,
     super.onErrorReturn,
     super.autoReset,
     super.refreshOnError,
+    bool immediate = false,
     this.ignoreLoading = false,
   }) : super.customFetch(onFetch: _asyncEffect(source, effect)) {
+    if (immediate) refresh(force: true);
     _dependOnSource(source);
   }
 
   /// Creates a AsyncEffectNotifier.
   ///
+  /// If [immediate] is true, the effect will be executed immediately after the notifier is created.
+  /// If [ignoreLoading] is true, any [Loading] state of the input notifiers will be ignored, and the previous result
+  /// will be kept.
+  ///
   /// {@macro result_notifier.constructor}
   AsyncEffectNotifier.result(
-    ResultNotifier<S> source, {
+    ResultListenable<S> source, {
     required AsyncResultEffect<S, R> effect,
     super.data,
     super.result,
@@ -351,12 +416,14 @@ class AsyncEffectNotifier<S, R> extends FutureNotifier<R> with EffectNotifier<S,
     super.onErrorReturn,
     super.autoReset,
     super.refreshOnError,
+    bool immediate = false,
     this.ignoreLoading = false,
   }) : super.customFetch(onFetch: _asyncResultEffect(source, effect)) {
+    if (immediate) refresh(force: true);
     _dependOnSource(source);
   }
 
-  static ResultNotifierCallback<R> _asyncEffect<S, R>(ResultNotifier<S> source, AsyncEffect<S, R> effect) {
+  static ResultNotifierCallback<R> _asyncEffect<S, R>(ResultListenable<S> source, AsyncEffect<S, R> effect) {
     return (not) {
       (not as AsyncEffectNotifier<S, R>)._withSourceData(source, (sourceData) {
         not.performFetch((not) async => Data(await effect(not, sourceData)));
@@ -364,7 +431,8 @@ class AsyncEffectNotifier<S, R> extends FutureNotifier<R> with EffectNotifier<S,
     };
   }
 
-  static ResultNotifierCallback<R> _asyncResultEffect<S, R>(ResultNotifier<S> source, AsyncResultEffect<S, R> effect) {
+  static ResultNotifierCallback<R> _asyncResultEffect<S, R>(
+      ResultListenable<S> source, AsyncResultEffect<S, R> effect) {
     return (not) {
       (not as AsyncEffectNotifier<S, R>)._withSourceData(source, (sourceData) {
         not.performFetch((not) => effect(not, sourceData));
@@ -394,9 +462,13 @@ class StreamEffectNotifier<S, R> extends StreamNotifier<R> with EffectNotifier<S
 
   /// Creates a StreamEffectNotifier.
   ///
+  /// If [immediate] is true, the effect will be executed immediately after the notifier is created.
+  /// If [ignoreLoading] is true, any [Loading] state of the input notifiers will be ignored, and the previous result
+  /// will be kept.
+  ///
   /// {@macro result_notifier.constructor}
   StreamEffectNotifier(
-    ResultNotifier<S> source, {
+    ResultListenable<S> source, {
     required StreamEffect<S, R> effect,
     super.data,
     super.result,
@@ -405,16 +477,22 @@ class StreamEffectNotifier<S, R> extends StreamNotifier<R> with EffectNotifier<S
     super.onErrorReturn,
     super.autoReset,
     super.refreshOnError,
+    bool immediate = false,
     this.ignoreLoading = false,
   }) : super.customFetch(onFetch: _effect(source, effect)) {
+    if (immediate) refresh(force: true);
     _dependOnSource(source);
   }
 
   /// Creates a StreamEffectNotifier.
   ///
+  /// If [immediate] is true, the effect will be executed immediately after the notifier is created.
+  /// If [ignoreLoading] is true, any [Loading] state of the input notifiers will be ignored, and the previous result
+  /// will be kept.
+  ///
   /// {@macro result_notifier.constructor}
   StreamEffectNotifier.result(
-    ResultNotifier<S> source, {
+    ResultListenable<S> source, {
     required ResultStreamEffect<S, R> effect,
     super.data,
     super.result,
@@ -423,12 +501,14 @@ class StreamEffectNotifier<S, R> extends StreamNotifier<R> with EffectNotifier<S
     super.onErrorReturn,
     super.autoReset,
     super.refreshOnError,
+    bool immediate = false,
     this.ignoreLoading = false,
   }) : super.customFetch(onFetch: _resultEffect(source, effect)) {
+    if (immediate) refresh(force: true);
     _dependOnSource(source);
   }
 
-  static ResultNotifierCallback<R> _effect<S, R>(ResultNotifier<S> source, StreamEffect<S, R> effect) {
+  static ResultNotifierCallback<R> _effect<S, R>(ResultListenable<S> source, StreamEffect<S, R> effect) {
     return (not) {
       (not as StreamEffectNotifier<S, R>)._withSourceData(source, (sourceData) {
         not.performFetch((not) => effect(not, sourceData).map((event) => Data(event)));
@@ -436,7 +516,7 @@ class StreamEffectNotifier<S, R> extends StreamNotifier<R> with EffectNotifier<S
     };
   }
 
-  static ResultNotifierCallback<R> _resultEffect<S, R>(ResultNotifier<S> source, ResultStreamEffect<S, R> effect) {
+  static ResultNotifierCallback<R> _resultEffect<S, R>(ResultListenable<S> source, ResultStreamEffect<S, R> effect) {
     return (not) {
       (not as StreamEffectNotifier<S, R>)._withSourceData(source, (sourceData) {
         not.performFetch((not) => effect(not, sourceData));
@@ -461,10 +541,25 @@ mixin StreamableResultNotifierMixin<T> on ResultNotifier<T> {
     if (_streamController != null && modified) _streamController!.add(newValue);
   }
 
-  /// Returns a [Stream] of [Result]s for this notifier, as an alternative way of observing changes.
+  /// Returns a [Stream] of [Result]s using this notifier as a source.
   Stream<Result<T>> get stream {
     _streamController ??= StreamController.broadcast(sync: true);
     return _streamController!.stream;
+  }
+
+  /// Returns a [Stream] of [Result]s, starting with the current [value].
+  Stream<Result<T>> get valueStream async* {
+    yield value;
+    await for (final result in stream) {
+      yield result;
+    }
+  }
+
+  /// Returns a [Stream] of data, i.e. a stream event is generated whenever [Data] is set.
+  ///
+  /// Similar to [valueStream], this stream will start with the current data, if any.
+  Stream<T> get dataStream {
+    return valueStream.where((e) => e.isData).map((e) => e.data!);
   }
 
   @override

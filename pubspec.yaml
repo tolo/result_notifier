@@ -1,17 +1,17 @@
 name: result_notifier
-description: “Pragmatic state management for Flutter, based on familiar and platform-native concepts”
-version: 0.2.1
+description: Pragmatic state management for Flutter, based on familiar and platform-native concepts
+version: 0.3.0
 homepage: https://github.com/tolo/result_notifier
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
-  flutter: ">=1.17.0"
+  flutter: ">=3.16.0"
 
 dependencies:
   flutter:
     sdk: flutter
 
-  meta: ^1.10.0
+  meta: ^1.11.0
 
 dev_dependencies:
   flutter_test:

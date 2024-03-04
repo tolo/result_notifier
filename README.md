@@ -204,10 +204,15 @@ notifier.
 
 
 ### ResourceProvider- Providing notifiers to a subtree of widgets
-
 A [ResourceProvider](https://pub.dev/documentation/result_notifier/latest/result_notifier/ResourceProvider-class.html)
 can be used to handle the lifecycle (i.e. creation and disposal) of a notifier (or arbitrary resource), and provide it 
 to a subtree of widgets. 
+
+
+### Using regular `ValueNotifier`s / `ValueListenables`s
+This package adds the extension method `toResultListenable` to `ValueListenable`, which transform it into a 
+`ResultListenable` that can be used in for instance effects, such as `CombineLatestNotifier`.
+
 
 
 ## Examples

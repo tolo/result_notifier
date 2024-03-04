@@ -23,9 +23,9 @@ class ResultStoreApp extends StatelessWidget {
   }
 }
 
-/// Using [ResultNotifierProvider] to provide a simple way of providing a repository ([ResultNotifier]) to child widgets.
+/// Using [ResourceProvider] to provide a simple way of providing a [ResultStore] to child widgets.
 class RepositoryProvider extends ResourceProvider<ResultStore<String, String>> {
-  const RepositoryProvider({super.key});
+  const RepositoryProvider({super.key}) : super.custom();
 
   @override
   ResultStore<String, String> createResource(BuildContext context) {
@@ -45,9 +45,6 @@ class RepositoryProvider extends ResourceProvider<ResultStore<String, String>> {
       }),
     );
   }
-
-  @override
-  void disposeResource(BuildContext context, ResultStore<String, String> resource) => resource.dispose();
 
   @override
   Widget build(BuildContext context, ResultStore<String, String> resource) {

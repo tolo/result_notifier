@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:result_notifier/result_notifier.dart';
 
 import 'result.dart';
 import 'result_notifier.dart';
@@ -20,7 +21,7 @@ typedef OnResultBuilder<T> = Widget Function(BuildContext context, Result<T> res
 /// ResultBuilder facilitates building an appropriate Widget representing the latest [Result] from a ResultNotifier.
 ///
 /// If the creation and disposal lifecycle of the ResultNotifier needs to be managed by the Widget, see instead
-/// [ResultNotifierProvider].
+/// [ResourceProvider].
 class ResultBuilder<T> extends ValueListenableBuilder<Result<T>> {
   /// Creates a ResultBuilder that builds a Widget using the specified builder callbacks corresponding to the different
   /// Result states.
@@ -88,143 +89,5 @@ class ResultBuilder<T> extends ValueListenableBuilder<Result<T>> {
       assert(widget != null, 'No widget build for $result');
       return widget ?? const SizedBox.shrink();
     };
-  }
-}
-
-/// Widget builder function for [ResultNotifierProvider].
-typedef OnResultNotifierBuilder<T> = Widget Function(BuildContext context, ResultNotifier<T>, Result<T> result);
-
-/// Stateful convenience Widget that simplifies the creation, disposal and use of a [ResultNotifier], through the use
-/// of a [ValueListenableBuilder].
-///
-/// The [ValueListenableBuilder] class is used to listen for changes in the ResultNotifier, and build a Widget using
-/// the [buildResult] method. The default implementation of this method called the provided [resultBuilder], if any,
-/// otherwise a [UnimplementedError] is thrown.
-///
-/// Another option is to instead override the [build] method, which can be useful if the use of [ResultNotifier] needs
-/// to be further customized.
-class ResultNotifierProvider<T> extends ResourceProvider<ResultNotifier<T>> {
-  const ResultNotifierProvider({super.key, super.create, this.resultBuilder});
-
-  /// An optional builder function, used by [buildResult] to build the the child Widget of this ResultNotifierProvider.
-  final OnResultNotifierBuilder<T>? resultBuilder;
-
-  @override
-  void disposeResource(BuildContext context, ResultNotifier<T> resource) {
-    resource.dispose();
-  }
-
-  /// Builds this Widget with the specified [Result].
-  ///
-  /// This method is called by the [ValueListenableBuilder] created by the [build] method.
-  Widget buildResult(BuildContext context, ResultNotifier<T> resultNotifier, Result<T> result) {
-    if (resultBuilder != null) {
-      return resultBuilder!(context, resultNotifier, result);
-    } else {
-      throw UnimplementedError('Provide a resultBuilder of override this method in a subclass.');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context, ResultNotifier<T> resource) {
-    return ValueListenableBuilder(
-      valueListenable: resource,
-      builder: (context, result, _) => buildResult(context, resource, result),
-    );
-  }
-
-  /// Finds the nearest ancestor [ResultNotifier] with result type T in the Widget tree.
-  static ResultNotifier<T> of<T>(BuildContext context) => ResourceProvider.of<ResultNotifier<T>>(context);
-}
-
-/// Signature for functions that creates a resource.
-typedef CreateResource<T> = T Function(BuildContext context);
-
-/// Signature for functions that disposes a resource.
-typedef DisposeResource<T> = void Function(BuildContext context, T resource);
-
-/// Signature for functions that builds a Widget using a resource.
-typedef ResourceWidgetBuilder<T> = Widget Function(BuildContext context, T resource);
-
-/// Stateful convenience Widget that manages the lifecycle (creation and disposal) of a resource and making it available
-/// when building this Widget, as well as to all descendant Widgets (see [of]).
-///
-/// ResourceProvider can be used in two ways - either by subclassing and overriding the [createResource],
-/// [disposeResource] and [build] methods, or by providing the `create`, `dispose` and `builder` parameters in the
-/// constructor.
-class ResourceProvider<T> extends StatefulWidget {
-  /// Creates a ResourceProvider with optional callbacks for creating and disposing the resource as well as building a
-  /// Widget using the resource.
-  const ResourceProvider({
-    super.key,
-    CreateResource<T>? create,
-    DisposeResource<T>? dispose,
-    ResourceWidgetBuilder? builder,
-  })  : _create = create,
-        _dispose = dispose,
-        _builder = builder,
-        super();
-
-  final CreateResource<T>? _create;
-  final DisposeResource<T>? _dispose;
-  final ResourceWidgetBuilder? _builder;
-
-  T createResource(BuildContext context) {
-    if (_create != null) {
-      return _create(context);
-    } else {
-      throw UnimplementedError('Provide a create function or override this method in a subclass.');
-    }
-  }
-
-  void disposeResource(BuildContext context, T resource) {
-    if (_dispose != null) {
-      _dispose(context, resource);
-    } else {
-      throw UnimplementedError('Provide a dispose function or override this method in a subclass.');
-    }
-  }
-
-  Widget build(BuildContext context, T resource) {
-    if (_builder != null) {
-      return _builder(context, resource);
-    } else {
-      throw UnimplementedError('Provide a builder function or override this method in a subclass.');
-    }
-  }
-
-  @override
-  State<StatefulWidget> createState() => ResourceProviderState();
-
-  /// Finds the nearest ancestor resource of type T in the Widget tree.
-  static T of<T>(BuildContext context) => _ResourceInheritedWidget.of<T>(context).resource;
-}
-
-/// The state of a [ResourceProvider].
-class ResourceProviderState<T> extends State<ResourceProvider<T>> {
-  late final T resource = widget.createResource(context);
-
-  @override
-  void dispose() {
-    widget.disposeResource(context, resource);
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return _ResourceInheritedWidget(resource: resource, child: widget.build(context, resource));
-  }
-}
-
-class _ResourceInheritedWidget<T> extends InheritedWidget {
-  const _ResourceInheritedWidget({super.key, required this.resource, required super.child});
-
-  final T resource;
-
-  @override
-  bool updateShouldNotify(_ResourceInheritedWidget<T> oldWidget) => oldWidget.resource != resource;
-
-  static _ResourceInheritedWidget<T> of<T>(BuildContext context) {
-    return context.dependOnInheritedWidgetOfExactType<_ResourceInheritedWidget<T>>()!;
   }
 }

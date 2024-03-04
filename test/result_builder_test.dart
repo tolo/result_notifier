@@ -131,17 +131,18 @@ void main() {
     });
   });
 
-  group('ResultNotifierProvider', () {
+  group('ResourceProvider', () {
     testWidgets('Returns correct widget for state', (tester) async {
       late final ResultNotifier<String> notifier;
 
       final app = MaterialApp(
-        home: ResultNotifierProvider(
+        home: ResourceProvider(
           create: (context) => notifier = ResultNotifier<String>(data: 'Data'),
-          resultBuilder: (context, notifier, result) => result.when(
-            data: (data) => Text(data),
-            error: (error, stackTrace, data) => Text('Error - $data - $error'),
-            loading: (data) => Text('Loading - $data'),
+          builder: (context, notifier) => ResultBuilder(
+            notifier,
+            onData: (context, data) => Text(data),
+            onError: (context, error, stackTrace, data) => Text('Error - $data - $error'),
+            onLoading: (context, data) => Text('Loading - $data'),
           ),
         ),
       );

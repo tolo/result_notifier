@@ -4,9 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
 import 'async_notifier.dart';
-import 'effect_notifiers.dart';
 import 'exceptions.dart';
 import 'result.dart';
+import 'result_listenable.dart';
+export 'result_listenable.dart';
 
 /// VoidCallback for functions used to dispose a registered listener of a [ResultNotifier].
 typedef Disposer = void Function();
@@ -14,7 +15,7 @@ typedef Disposer = void Function();
 /// Signature for callback functions used by [ResultNotifier].
 typedef ResultNotifierCallback<T> = void Function(ResultNotifier<T> notifier);
 
-/// [ValueNotifier] subclass using [Result] as value type, supporting data, loading and error states.
+/// [ValueListenable] implementation that holds a single [Result] value, supporting data, loading and error states.
 ///
 /// ResultNotifier supports well-defined transitions between the different [Result] states, including support for
 /// fine-grained observation of the different states.
@@ -33,8 +34,8 @@ typedef ResultNotifierCallback<T> = void Function(ResultNotifier<T> notifier);
 /// * Data is stale ([isStale]).
 /// * The [refresh] method is called with `force` set to true.
 ///
-/// To cancel an ongoing data fetch operation, use [cancel]. This also invokes the [onCancel] callback, if specified.
-class ResultNotifier<T> extends ValueNotifier<Result<T>> {
+/// To cancel an ongoing data fetch operation, use [cancel]. This also invokes the [onReset] callback, if specified.
+class ResultNotifier<T> extends ChangeNotifier with ResultListenable<T> {
   /// Starts with the specified `data` (represented as [Data]), `result`, or otherwise the [Initial] loading state.
   ///
   /// {@template result_notifier.constructor}
@@ -64,7 +65,7 @@ class ResultNotifier<T> extends ValueNotifier<Result<T>> {
     bool refreshOnError = false,
   })  : willAutoReset = autoReset,
         willRefreshOnError = refreshOnError,
-        super(data != null ? Data(data) : result ?? Initial<T>());
+        _value = data != null ? Data(data) : result ?? Initial<T>();
 
   /// Creates a [FutureNotifier] that fetches data asynchronously, when needed.
   ///
@@ -129,16 +130,23 @@ class ResultNotifier<T> extends ValueNotifier<Result<T>> {
 
   // Get/set data
 
-  /// Just an alias for [value].
-  Result<T> get result => value;
-
+  /// The current [Result] stored in this notifier.
+  ///
+  /// When the value is replaced with something that is not equal to the old
+  /// value as evaluated by the equality operator ==, this class notifies its
+  /// listeners.
   @override
+  Result<T> get value => _value;
+  Result<T> _value;
   set value(Result<T> newValue) {
-    if (newValue.isError && onErrorReturn != null) {
-      super.value = value.toData(data: onErrorReturn!(newValue.error));
+    if (_value == newValue) {
+      return;
+    } else if (newValue.isError && onErrorReturn != null) {
+      _value = value.toData(data: onErrorReturn!(newValue.error));
     } else {
-      super.value = newValue;
+      _value = newValue;
     }
+    notifyListeners();
   }
 
   /// Attempts to get the [Result.data] of the current Result [value].
@@ -178,9 +186,6 @@ class ResultNotifier<T> extends ValueNotifier<Result<T>> {
 
   // Computed/read-only properties
 
-  /// {@macro result.lastUpdate}
-  DateTime get lastUpdate => value.lastUpdate;
-
   /// Returns `true` if no [expiration] has been set, meaning the cache will never expire.
   bool get isAlwaysFresh => expiration == null;
 
@@ -191,30 +196,6 @@ class ResultNotifier<T> extends ValueNotifier<Result<T>> {
   bool get isStale => !isFresh;
 
   Duration get _timeSinceLastUpdate => DateTime.now().difference(lastUpdate);
-
-  /// {@macro result.isInitial}
-  bool get isInitial => value.isInitial;
-
-  /// {@macro result.isLoading}
-  bool get isLoading => value.isLoading;
-
-  /// {@macro result.isLoadingData}
-  bool get isLoadingData => value.isLoadingData;
-
-  /// {@macro result.isReloading}
-  bool get isReloading => value.isReloading;
-
-  /// {@macro result.isData}
-  bool get isData => value.isData;
-
-  /// {@macro result.isError}
-  bool get isError => value.isError;
-
-  /// {@macro result.isCancelled}
-  bool get isCancelled => value.isCancelled;
-
-  /// {@macro result.hasData}
-  bool get hasData => value.hasData;
 
   // Lifecycle
 
@@ -325,37 +306,6 @@ class ResultNotifier<T> extends ValueNotifier<Result<T>> {
   Future<T> refreshAwait({bool force = false, bool alwaysTouch = false}) {
     refresh(force: force, alwaysTouch: alwaysTouch);
     return future;
-  }
-
-  // Observation / listeners
-
-  /// Registers a listener ([addListener]) that will only be invoked for [Data] results.
-  ///
-  /// The returned [Disposer] muse be used to remove the listener.
-  @useResult
-  Disposer onData(void Function(T data) callback) => onResult((result) => result.whenOr(data: callback));
-
-  /// Registers a listener ([addListener]) that will only be invoked for [Loading] results.
-  ///
-  /// The returned [Disposer] muse be used to remove the listener.
-  @useResult
-  Disposer onLoading(void Function(T? data) callback) => onResult((result) => result.whenOr(loading: callback));
-
-  /// Registers a listener ([addListener]) that will only be invoked for [Error] results.
-  ///
-  /// The returned [Disposer] muse be used to remove the listener.
-  @useResult
-  Disposer onError(void Function(Object? error, StackTrace? stackTrace, T? data) callback) =>
-      onResult((result) => result.whenOr(error: callback));
-
-  /// Registers a listener ([addListener]) that will be invoked with the current Result ([value]).
-  ///
-  /// The returned [Disposer] muse be used to remove the listener.
-  @useResult
-  Disposer onResult(void Function(Result<T> result) callback) {
-    void listener() => callback(value);
-    addListener(listener);
-    return () => removeListener(listener);
   }
 
   Completer<T> _addCompleter(Completer<T> completer) {
@@ -473,112 +423,5 @@ class ResultNotifier<T> extends ValueNotifier<Result<T>> {
       }
     }
     return result;
-  }
-
-  // Effects
-
-  /// Creates a new [CombineLatestNotifier] that that combines the value of this notifier with another one.
-  CombineLatestNotifier<T, R> combineLatest<R>(
-    ResultNotifier<T> other, {
-    required R Function(List<T> data) combineData,
-  }) {
-    return CombineLatestNotifier([this, other], combineData: combineData);
-  }
-
-  /// Creates a new synchronous [EffectNotifier] that executes the provided effect the data of this notifier changes.
-  ///
-  /// See [SyncEffectNotifier].
-  EffectNotifier<T, R> effect<R>(
-    Effect<T, R> effect, {
-    R? data,
-    Result<R>? result,
-    Duration? expiration,
-    ResultNotifierCallback<R>? onReset,
-    R Function(Object? error)? onErrorReturn,
-    bool autoReset = false,
-    bool refreshOnError = false,
-    bool ignoreLoading = false,
-  }) {
-    return SyncEffectNotifier(
-      this,
-      effect: effect,
-      data: data,
-      result: result,
-      expiration: expiration,
-      onReset: onReset,
-      onErrorReturn: onErrorReturn,
-      autoReset: autoReset,
-      refreshOnError: refreshOnError,
-      ignoreLoading: ignoreLoading,
-    );
-  }
-
-  /// Creates a new [ResultNotifier] that only gets updated when the data of this notifier changes, i.e. ignoring
-  /// [Loading] and [Error] states.
-  ResultNotifier<T> alwaysData(T defaultData) {
-    return effect(
-      (_, data) => data,
-      data: defaultData,
-      onErrorReturn: (_) => defaultData,
-      ignoreLoading: true,
-    );
-  }
-
-  /// Creates a new asynchronous [EffectNotifier] that executes the provided asynchronous effect the data of this
-  /// notifier changes.
-  ///
-  /// See [AsyncEffectNotifier].
-  EffectNotifier<T, R> asyncEffect<R>(
-    AsyncEffect<T, R> effect, {
-    R? data,
-    Result<R>? result,
-    Duration? expiration,
-    ResultNotifierCallback<R>? onReset,
-    R Function(Object? error)? onErrorReturn,
-    bool autoReset = false,
-    bool refreshOnError = false,
-    bool ignoreLoading = false,
-  }) {
-    return AsyncEffectNotifier(
-      this,
-      effect: effect,
-      data: data,
-      result: result,
-      expiration: expiration,
-      onReset: onReset,
-      onErrorReturn: onErrorReturn,
-      autoReset: autoReset,
-      refreshOnError: refreshOnError,
-      ignoreLoading: ignoreLoading,
-    );
-  }
-
-  /// Creates a new asynchronous [EffectNotifier] that executes the provided strean effect the data of this
-  /// notifier changes.
-  ///
-  /// See [StreamEffectNotifier].
-  EffectNotifier<T, R> streamEffect<R>(
-    StreamEffect<T, R> effect, {
-    R? data,
-    Result<R>? result,
-    Duration? expiration,
-    ResultNotifierCallback<R>? onReset,
-    R Function(Object? error)? onErrorReturn,
-    bool autoReset = false,
-    bool refreshOnError = false,
-    bool ignoreLoading = false,
-  }) {
-    return StreamEffectNotifier(
-      this,
-      effect: effect,
-      data: data,
-      result: result,
-      expiration: expiration,
-      onReset: onReset,
-      onErrorReturn: onErrorReturn,
-      autoReset: autoReset,
-      refreshOnError: refreshOnError,
-      ignoreLoading: ignoreLoading,
-    );
   }
 }
