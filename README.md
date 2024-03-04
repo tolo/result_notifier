@@ -2,7 +2,7 @@
 
 **Pragmatic and magic-free state management for Flutter - simply [lagom](https://en.wikipedia.org/wiki/Lagom).**
 
-![result_notifier.png](https://github.com/tolo/result_notifier/blob/main/doc/assets/result_notifier.png)
+![result_notifier.png](https://github.com/tolo/result_notifier/blob/main/doc/assets/result_notifier.jpg)
 
 Result Notifier is a simple and modest package for state management, based on familiar and platform-native concepts,
 rather than introducing new abstractions and mental models. In fact, the package really is little more than a few
