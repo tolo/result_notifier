@@ -1,6 +1,5 @@
 import 'dart:async';
-
-import 'package:flutter/cupertino.dart';
+import 'package:meta/meta.dart';
 
 import 'result.dart';
 import 'result_notifier.dart';

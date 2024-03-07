@@ -1,6 +1,6 @@
 import 'dart:collection';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import 'result.dart';
 import 'result_notifier.dart';
@@ -173,7 +173,7 @@ abstract class StatefulWatcherWidget extends StatefulWidget with StatefulWatcher
 
 /// The [State] of a [StatefulWatcherWidget], that adds observability of [Listenable]s, through the [WatcherContext]
 /// (a [BuildContext] subclass) provided to the [build] method.
-abstract class WatcherState<T extends StatefulWatcherWidget> extends State<T> {
+abstract class WatcherState<T extends StatefulWatcherMixin> extends State<T> {
   @override
   Widget build(covariant WatcherContext context);
 }

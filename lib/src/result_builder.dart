@@ -1,5 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:result_notifier/result_notifier.dart';
+import 'package:flutter/widgets.dart';
 
 import 'result.dart';
 import 'result_notifier.dart';

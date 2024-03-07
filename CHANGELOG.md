@@ -41,3 +41,9 @@
 ## 0.3.0+1
 
 * Just documentation updates.
+
+## 0.4.0
+
+* Removed `ResultNotifierProvider`.
+* Updated `ResourceProvider` to use `WatcherContext` instead of `BuildContext` (in builder and build), to make watching
+  easier.
