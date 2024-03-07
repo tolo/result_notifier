@@ -361,36 +361,51 @@ class ResultNotifier<T> extends ChangeNotifier with ResultListenable<T> {
 
   // Async result mutation
 
-  /// Set the data of this notifier asynchronously using the provided fetch function, and then returns the data.
+  /// Sets the data of this notifier asynchronously using the data returned by the provided function, which in turn is
+  /// returned by this method (in form of a Future).
   ///
-  /// Before executing the [fetch] function, the current state will be set to [Loading]. When the fetch completes, the
-  /// result will be set to [Data] if successful, or [Error] if an error occurs. If this notifier was cancelled during
-  /// the asynchronous gap, the result of [fetch] will be ignored and an ([Future.error]) will be returned by this
-  /// method (i.e. [CancelledException]).
+  /// Remember to always handle the `Future` returned by this method. If a return value is not needed, consider using
+  /// [updateDataAsync] instead.
+  ///
+  /// Before executing the provided function, the current state will be set to [Loading]. When the function returns, the
+  /// [value] will be set to [Data] if successful, or [Error] if an error occurs (i.e. if the function throws an
+  /// exception). If this notifier was cancelled during the asynchronous gap, the result of the function call will be
+  /// ignored and an ([Future.error]) will be returned by this method (i.e. [CancelledException]).
+  Future<T> setDataAsync(FutureOr<T> Function() fetchData) async {
+    return setResultAsync(() async => Data(await fetchData()))
+        .then((r) => r.isError ? throw (r as Error).error : r.data!);
+  }
+
+  /// Updates the data of this notifier asynchronously using the data returned by the provided function, and then
+  /// returns a `Future` that can optionally be used to await the completion of the update.
+  ///
+  /// Before executing the provided function, the current state will be set to [Loading]. When the function returns, the
+  /// [value] will be set to [Data] if successful, or [Error] if an error occurs (i.e. if the function throws an
+  /// exception). If this notifier was cancelled during the asynchronous gap, the result of the function call will be
+  /// ignored and an ([Future.error]) will be returned by this method (i.e. [CancelledException]).
+  ///
+  /// Note that the returned `Future` will never complete with an error.
   ///
   /// Instead of using the Future returned by this method, consider using [future] instead, which will await the next
   /// successful data or error result of this notifier.
-  Future<T> setDataAsync(FutureOr<T> Function() fetch) async {
-    return setResultAsync(() async {
-      final data = fetch();
-      return data is Future ? Data(await data) : Data(data);
-    }).then((r) => r.isError ? throw (r as Error).error : r.data!);
+  Future<void> updateDataAsync(FutureOr<T> Function() fetchData) async {
+    await setResultAsync(() async => Data(await fetchData()));
   }
 
-  /// Set the value (result) of this notifier asynchronously using the provided fetch function, and then returns the
-  /// result.
+  /// Sets the [value] (result) of this notifier asynchronously using the result returned by the provided function.
   ///
-  /// Before executing the [fetch] function, the current state will be set to [Loading]. When the fetch completes, the
-  /// result will be the result of the fetch if successful, or [Error] if an error occurs. If this notifier was
-  /// cancelled during the asynchronous gap, the result of [fetch] will be ignored and an [Error] will be returned by
-  /// this method (i.e. [Error.cancelled]).
+  /// Before executing the provided function, the current state will be set to [Loading]. The [result] will then be set
+  /// to the return value of the function call, if successful, or [Error] if an error occurs (i.e. if the function
+  /// throws an exception). If this notifier was cancelled during the asynchronous gap, the result of [fetch] will be
+  /// ignored and an [Error] will be returned by this method (i.e. [Error.cancelled]).
   ///
   /// Note that the Future returned by this method will always complete with a value, never an error. If an error
   /// occurs, it will be represented as an [Error] result.
   ///
-  /// Instead of using the Future returned by this method, consider using [future] instead, which will await the next
-  /// successful data or error result of this notifier.
-  Future<Result<T>> setResultAsync(FutureOr<Result<T>> Function() fetch) async {
+  /// The return value of this method is the current [value] (result) after executing the provided function. Instead of
+  /// using this, consider using [future] instead, which will await the next successful data or error result of this
+  /// notifier.
+  Future<Result<T>> setResultAsync(FutureOr<Result<T>> Function() fetchResult) async {
     assert(ChangeNotifier.debugAssertNotDisposed(this));
     toLoading(); // Important to always create a new Loading value, to indicate a new loading operation has started
 
@@ -407,12 +422,12 @@ class ResultNotifier<T> extends ChangeNotifier with ResultListenable<T> {
     }
 
     try {
-      final fetchResult = await fetch();
+      final fetchedResult = await fetchResult();
 
       final shouldAbortResult = abortIfDisposedOrCancelled();
       if (shouldAbortResult != null) return shouldAbortResult;
 
-      value = fetchResult;
+      value = fetchedResult;
     } catch (error, stackTrace) {
       final shouldAbortResult = abortIfDisposedOrCancelled();
       if (shouldAbortResult != null) {

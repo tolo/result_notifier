@@ -4,4 +4,5 @@ linter:
   rules:
     always_use_package_imports: false
     require_trailing_commas: false
-    #curly_braces_in_flow_control_structures: false
+    unawaited_futures: true
+

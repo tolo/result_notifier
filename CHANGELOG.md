@@ -47,3 +47,8 @@
 * Removed `ResultNotifierProvider`.
 * Updated `ResourceProvider` to use `WatcherContext` instead of `BuildContext` (in builder and build), to make watching
   easier.
+
+## 0.4.1
+
+* Added `updateDataAsync` to `ResultNotifier`, to update the data of a `ResultNotifier` asynchronously without having 
+  to handle potential exceptions (i.e. the returned Future can be safely ignored, or awaited without try/catch).

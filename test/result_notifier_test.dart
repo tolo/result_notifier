@@ -222,6 +222,40 @@ void main() {
     });
   });
 
+  group('ResultNotifier - setDataAsync', () {
+    test('Data correctly updated when calling setDataAsync', () async {
+      final fetcher = AsyncFetcher(id: 'data');
+      final notifier = ResultNotifier<String>(data: 'initial');
+      await notifier.setDataAsync(() => fetcher.fetch(notifier));
+      expect(fetcher.fetchCount, equals(1));
+      expect(notifier.data, equals('data'));
+    });
+
+    test('Data correctly updated when calling setDataAsync with sync function', () async {
+      final notifier = ResultNotifier<String>(data: 'initial');
+      await notifier.setDataAsync(() => 'data');
+      expect(notifier.data, equals('data'));
+    });
+
+    test('Error is thrown when function passed to setDataAsync throws', () async {
+      final notifier = ResultNotifier<String>(data: 'initial');
+      String? error;
+      try {
+        await notifier.setDataAsync(() => throw 'Error');
+      } on String catch (e) {
+        error = e;
+      }
+      expect(error, equals('Error'));
+      expect(notifier.isError, isTrue);
+    });
+
+    test('No error is thrown when function passed to updateDataAsync throws', () async {
+      final notifier = ResultNotifier<String>(data: 'initial');
+      await notifier.updateDataAsync(() => throw 'Error');
+      expect(notifier.isError, isTrue);
+    });
+  });
+
   group('FutureNotifier', () {
     test('Fetch sync', () async {
       bool didFetch = false;
