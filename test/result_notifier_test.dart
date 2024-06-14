@@ -157,6 +157,16 @@ void main() {
       expect(fetcher.didFetch, isFalse);
     });
 
+    test('Fetch is NOT invoked when already refreshing', () {
+      final fetcher = AsyncFetcher(id: 'data');
+      final notifier = ResultNotifier<String>.future(fetcher.fetch);
+      notifier.refresh();
+      expect(notifier.value, isA<Loading<String>>());
+      notifier.refresh();
+      expect(notifier.value, isA<Loading<String>>());
+      expect(fetcher.fetchCount, 1);
+    });
+
     test('Fetch IS invoked for fresh data when forced', () {
       final fetcher = Fetcher();
       final notifier = ResultNotifier<String>(data: 'test', onFetch: fetcher.onFetch);
@@ -227,6 +237,15 @@ void main() {
       final fetcher = AsyncFetcher(id: 'data');
       final notifier = ResultNotifier<String>(data: 'initial');
       await notifier.setDataAsync(() => fetcher.fetch(notifier));
+      expect(fetcher.fetchCount, equals(1));
+      expect(notifier.data, equals('data'));
+    });
+
+    test('Data correctly updated when calling set future', () async {
+      final fetcher = AsyncFetcher(id: 'data');
+      final notifier = ResultNotifier<String>(data: 'initial');
+      notifier.future = fetcher.fetch(notifier);
+      await notifier.future;
       expect(fetcher.fetchCount, equals(1));
       expect(notifier.data, equals('data'));
     });

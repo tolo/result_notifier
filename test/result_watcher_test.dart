@@ -11,11 +11,11 @@ void main() {
       final app = MaterialApp(
         home: Watcher(builder: (ref) {
           final result = notifier.watch(ref);
-          return Text(result.when(
-            data: (data) => data,
-            loading: (data) => 'Loading - $data',
-            error: (error, _, data) => 'Error - $data - $error',
-          ));
+          return Text(switch (result) {
+            (final Data<String> d) => d.data,
+            (final Loading<String> l) => 'Loading - ${l.data}',
+            (final Error<String> e) => 'Error - ${e.data} - ${e.error}',
+          });
         }),
       );
 

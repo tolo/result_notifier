@@ -79,12 +79,11 @@ class ActivityState extends State<ActivityPage> {
               ),
               SizedBox(height: 20),
               Text('Result: ', style: Theme.of(context).textTheme.headlineMedium),
-              ResultBuilder<String>(
-                result,
-                onLoading: (context, data) => const CircularProgressIndicator(),
-                onError: (context, error, stackTrace, data) => Text('Error: $error'),
-                onData: (context, data) => Text(data, style: Theme.of(context).textTheme.bodyLarge),
-              ),
+              result.builder((context, result, child) => switch (result) {
+                    (Data d) => Text(d.data, style: Theme.of(context).textTheme.bodyLarge),
+                    (Error e) => Text('Error: ${e.error}'),
+                    (_) => const CircularProgressIndicator()
+                  }),
             ],
           ),
         ),

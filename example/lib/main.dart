@@ -49,12 +49,11 @@ class ActivityPage extends StatelessWidget {
           title: const Text('Activity suggestion'),
         ),
         body: Center(
-          child: ResultBuilder<String>(
-            activityRepository,
-            onLoading: (context, data) => const CircularProgressIndicator(),
-            onError: (context, error, stackTrace, data) => Text('Error: $error'),
-            onData: (context, data) => Text(data),
-          ),
+          child: activityRepository.builder((context, result, child) => switch (result) {
+                (Data d) => Text(d.data),
+                (Error e) => Text('Error: ${e.error}'),
+                (_) => const CircularProgressIndicator()
+              }),
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => activityRepository.refresh(), // Note: if the ResultNotifier was setup to use (cache)

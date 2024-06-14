@@ -125,25 +125,25 @@ class ActivityTypeWidget extends StatelessWidget {
       children: [
         Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        activity.when(
-          // In this example, we take the opportunity to show the existing data along with the
-          // CircularProgressIndicator when loading
-          loading: (data) => Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (data != null) Text(data),
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 8),
-                child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator()),
-              ),
-            ],
-          ),
-          data: (data) => Text(data),
+        switch (activity) {
+          (Data d) => Text(d.data),
           // Here, we first check if the error was due to cancellation before showing how to present the error. Another
           // way to check if the error was due to cancellation is see if the error is of type CancelledException.
-          error: (e, st, data) =>
-              activity.isCancelled ? Text('$data (cancelled)') : Text('Error: $e, last data: $data'),
-        ),
+          (Error e) =>
+            activity.isCancelled ? Text('${e.data} (cancelled)') : Text('Error: ${e.error}, last data: ${e.data}'),
+          // In this example, we take the opportunity to show the existing data along with the
+          // CircularProgressIndicator when loading
+          (Loading l) => Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (l.data != null) Text(l.data),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 8),
+                  child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator()),
+                ),
+              ],
+            )
+        },
         const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,

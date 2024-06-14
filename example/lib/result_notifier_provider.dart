@@ -65,12 +65,11 @@ class ActivityPage extends WatcherWidget {
         title: Text('Activity suggestion (${activity.lastUpdate})'),
       ),
       body: Center(
-        child: activity.when(
-          error: (e, st, data) => Text('Error: $e'),
-          loading: (data) => const CircularProgressIndicator(),
-          data: (data) => Text(data),
-        ),
-      ),
+          child: switch (activity) {
+        (Data d) => Text(d.data),
+        (Error e) => Text('Error: ${e.error}'),
+        (_) => const CircularProgressIndicator()
+      }),
       floatingActionButton: FloatingActionButton.extended(
         // Note, whenever pressing this button, the widget will (normally) be rebuilt twice - once for the loading
         // state, and then again when the data is available. Also, if the ResultNotifier was setup to use (cache)

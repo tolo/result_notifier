@@ -149,51 +149,6 @@ sealed class Result<T> {
     );
   }
 
-  /// Performs an action depending on the type of the current [Result], using the provided callbacks.
-  ///
-  /// The action can return a new representation of the result.
-  X when<X>({
-    required X Function(T? data) loading,
-    required X Function(T data) data,
-    required X Function(Object error, StackTrace? stackTrace, T? data) error,
-    X Function(T? data)? cancelled,
-  }) {
-    return switch (this) {
-      Data(data: final d) => data(d),
-      Error(error: final e, stackTrace: final st, data: final d) =>
-        (cancelled != null && isCancelled) ? cancelled(d) : error(e, st, d),
-      Loading(data: final d) => loading(d),
-    };
-  }
-
-  /// Performs an action depending on the type of the current [Result], using the optional provided callbacks.
-  ///
-  /// The action can return a new representation of the result, or simply null.
-  X? whenOr<X>({
-    X? Function(T? data)? loading,
-    X? Function(T data)? data,
-    X? Function(Object error, StackTrace? stackTrace, T? data)? error,
-    X Function(T? data)? cancelled,
-  }) {
-    return switch (this) {
-      Data(data: final v) => data?.call(v),
-      Error(error: final e, stackTrace: final st, data: final d) =>
-        (cancelled != null && isCancelled) ? cancelled(d) : error?.call(e, st, d),
-      Loading(data: final v) => loading?.call(v),
-    };
-  }
-
-  /// Performs an action based on the presence of [data], regardless off the type of the Result
-  ///
-  /// The `hasData` callback will be called if data is present (i.e. [hasData]), if not, the `orElse` callback will be
-  /// used.
-  X whenData<X>({
-    required X Function(T data) hasData,
-    required X Function(Result<T> result) orElse,
-  }) {
-    return data != null ? hasData(data as T) : orElse(this);
-  }
-
   @override
   bool operator ==(Object other) {
     return identical(this, other) ||
@@ -220,7 +175,7 @@ final class Initial<T> extends Loading<T> {
   String toString() => 'Initial<$T>(data: $data, lastUpdate: $lastUpdate)';
 }
 
-/// Loading
+/// Represents a loading/reloading state, along with the previous data, if any.
 final class Loading<T> extends Result<T> {
   Loading({this.data, super.lastUpdate}) : super._();
 
@@ -235,9 +190,12 @@ final class Loading<T> extends Result<T> {
   String toString() => 'Loading<$T>(data: $data, lastUpdate: $lastUpdate)';
 }
 
-/// Data
+/// Represents a result containing actual data.
 final class Data<T> extends Result<T> {
+  /// Creates a Data, with a last update time set to the current time (i.e. fresh).
   Data(this.data, {super.lastUpdate}) : super._();
+
+  /// Creates a Data, with a last update time set to a value indicating stale data (i.e. needing refresh).
   Data.stale(this.data) : super._(lastUpdate: _staleDateTime);
 
   @override
@@ -255,7 +213,7 @@ final class Data<T> extends Result<T> {
   String toString() => 'Data<$T>(data: $data, lastUpdate: $lastUpdate)';
 }
 
-/// Error
+/// Represents an error, along with the previous data, if any.
 final class Error<T> extends Result<T> {
   /// Created a Error.
   Error({required this.error, this.stackTrace, this.data, super.lastUpdate}) : super._();

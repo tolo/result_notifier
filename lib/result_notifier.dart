@@ -11,7 +11,6 @@ export 'src/exceptions.dart';
 export 'src/extensions.dart';
 export 'src/provider.dart';
 export 'src/result.dart';
-export 'src/result_builder.dart';
 export 'src/result_notifier.dart';
 export 'src/result_store.dart';
 export 'src/watcher.dart';

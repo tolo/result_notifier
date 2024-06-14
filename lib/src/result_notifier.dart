@@ -9,9 +9,6 @@ import 'result.dart';
 import 'result_listenable.dart';
 export 'result_listenable.dart';
 
-/// VoidCallback for functions used to dispose a registered listener of a [ResultNotifier].
-typedef Disposer = void Function();
-
 /// Signature for callback functions used by [ResultNotifier].
 typedef ResultNotifierCallback<T> = void Function(ResultNotifier<T> notifier);
 
@@ -175,13 +172,21 @@ class ResultNotifier<T> extends ChangeNotifier with ResultListenable<T> {
   /// If data or error is available, it will be returned directly (as [Future.value] / [Future.error]), otherwise a
   /// [Completer] will be used to await data or error.
   Future<T> get future {
-    if (hasData) {
+    if (isData) {
       return Future.value(data);
     } else if (isError) {
       return Future.error((value as Error).error, (value as Error).stackTrace);
     } else {
       return _addCompleter(Completer<T>()).future;
     }
+  }
+
+  /// Sets the [value] to [Data] result, containing the data returned by the provided [Future].
+  ///
+  /// See also:
+  /// - [setDataAsync] which is used to set the new value.
+  set future(Future<T> future) {
+    setDataAsync(() => future).ignore();
   }
 
   // Computed/read-only properties
@@ -301,7 +306,8 @@ class ResultNotifier<T> extends ChangeNotifier with ResultListenable<T> {
   ///
   /// Returns a [Future] that completes with the new data or error.
   ///
-  /// See [future].
+  /// See also:
+  /// - [future] which returns a [Future] that completes with the current data or error.
   @useResult
   Future<T> refreshAwait({bool force = false, bool alwaysTouch = false}) {
     refresh(force: force, alwaysTouch: alwaysTouch);
@@ -309,7 +315,7 @@ class ResultNotifier<T> extends ChangeNotifier with ResultListenable<T> {
   }
 
   Completer<T> _addCompleter(Completer<T> completer) {
-    Disposer? disposable;
+    VoidCallback? disposable;
     void completerResult(Result<T> result) {
       if (result.isData || result.isError) {
         result.isData

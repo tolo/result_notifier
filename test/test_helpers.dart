@@ -4,15 +4,16 @@ class Fetcher {
   Fetcher({this.touch = false});
   final bool touch;
 
-  bool didFetch = false;
+  int fetchCount = 0;
+  bool get didFetch => fetchCount > 0;
 
   void onFetch<T>(ResultNotifier<T> notifier) {
-    didFetch = true;
+    fetchCount++;
     if (touch) notifier.touch();
   }
 
   void error<T>(ResultNotifier<T> notifier) {
-    didFetch = true;
+    fetchCount++;
     throw Exception('Error');
   }
 }

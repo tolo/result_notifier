@@ -8,7 +8,7 @@ import 'result_notifier.dart';
 typedef CreateResultNotifier<K, T> = ResultNotifier<T> Function(K key, ResultStore<K, T> store);
 typedef ResultNotifierOnDispose<K, T> = void Function(K key, ResultNotifier<T> strore);
 
-typedef _CacheEntry<T> = ({ResultNotifier<T> notifier, Disposer removeListener});
+typedef _CacheEntry<T> = ({ResultNotifier<T> notifier, VoidCallback removeListener});
 
 /// A [ChangeNotifier] that creates and caches [ResultNotifier]s for a given key, and optionally disposes them when
 /// they are no longer used.
@@ -64,8 +64,10 @@ class ResultStore<K, T> extends ChangeNotifier {
 
   /// Registers a listener ([addListener]) that will be invoked with the key and result of the last modified
   /// [ResultNotifier], whenever one is modified.
+  ///
+  /// Use the returned [VoidCallback] function to unsubscribe the callback.
   @useResult
-  Disposer onResult(void Function(K key, Result<T> result) callback) {
+  VoidCallback onResult(void Function(K key, Result<T> result) callback) {
     void listener() {
       final modification = _currentModification;
       if (modification != null) {

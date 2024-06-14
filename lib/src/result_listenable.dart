@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:meta/meta.dart';
 
 import 'effect_notifiers.dart';
@@ -47,35 +48,69 @@ abstract mixin class ResultListenable<T> implements ValueListenable<Result<T>> {
   /// {@macro result.hasData}
   bool get hasData => value.hasData;
 
+  // Builder
+
+  /// Convenience method for simplifying the creation of a [ValueListenableBuilder] with [ResultNotifier].
+  ///
+  /// If the creation and disposal lifecycle of the ResultNotifier needs to be managed by the Widget, see instead
+  /// [ResourceProvider].
+  ValueListenableBuilder<Result<T>> builder(
+      Widget Function(BuildContext context, Result<T> result, Widget? child) builder,
+      {Widget? child}) {
+    return ValueListenableBuilder<Result<T>>(
+      valueListenable: this,
+      builder: builder,
+      child: child,
+    );
+  }
+
   // Observation / listeners
 
   /// Registers a listener ([addListener]) that will only be invoked for [Data] results.
   ///
-  /// The returned [Disposer] muse be used to remove the listener.
+  /// Use the returned [VoidCallback] function to unsubscribe the listener (i.e. calls [removeListener]).
+  ///
+  /// See also:
+  /// - [onResult] for a more general listener.
   @useResult
-  Disposer onData(void Function(T data) callback) => onResult((result) => result.whenOr(data: callback));
+  VoidCallback onData(void Function(T data) listener) => onResult((result) {
+        if (result case final Data<T> data) listener(data.data);
+      });
 
   /// Registers a listener ([addListener]) that will only be invoked for [Loading] results.
   ///
-  /// The returned [Disposer] muse be used to remove the listener.
+  /// Use the returned [VoidCallback] function to unsubscribe the listener (i.e. calls [removeListener]).
+  ///
+  /// See also:
+  /// - [onResult] for a more general listener.
   @useResult
-  Disposer onLoading(void Function(T? data) callback) => onResult((result) => result.whenOr(loading: callback));
+  VoidCallback onLoading(void Function(T? data) listener) => onResult((result) {
+        if (result case final Loading<T> loading) listener(loading.data);
+      });
 
   /// Registers a listener ([addListener]) that will only be invoked for [Error] results.
   ///
-  /// The returned [Disposer] muse be used to remove the listener.
+  /// Use the returned [VoidCallback] function to unsubscribe the listener (i.e. calls [removeListener]).
+  ///
+  /// See also:
+  /// - [onResult] for a more general listener.
   @useResult
-  Disposer onError(void Function(Object? error, StackTrace? stackTrace, T? data) callback) =>
-      onResult((result) => result.whenOr(error: callback));
+  VoidCallback onError(void Function(Object? error, StackTrace? stackTrace, T? data) listener) => onResult((result) {
+        if (result case final Error<T> error) listener(error.error, error.stackTrace, error.data);
+      });
 
   /// Registers a listener ([addListener]) that will be invoked with the current Result ([value]).
   ///
-  /// The returned [Disposer] muse be used to remove the listener.
+  /// Use the returned [VoidCallback] function to unsubscribe the listener (i.e. calls [removeListener]).
+  ///
+  /// See also:
+  /// - [onData], [onLoading], [onError] for more specific listeners.
+  /// - [when] for a simple way to perform actions based on the type of the current Result, without registering a listener.
   @useResult
-  Disposer onResult(void Function(Result<T> result) callback) {
-    void listener() => callback(value);
-    addListener(listener);
-    return () => removeListener(listener);
+  VoidCallback onResult(void Function(Result<T> result) listener) {
+    void listenerFunc() => listener(value);
+    addListener(listenerFunc);
+    return () => removeListener(listenerFunc);
   }
 
   // Effects
