@@ -77,11 +77,11 @@ class ActivityPage extends WatcherWidget {
       body: Center(
         child: Column(children: [
           SizedBox(height: 16),
-          result.when(
-            loading: (data) => const CircularProgressIndicator(),
-            error: (error, stackTrace, data) => Text('Error: $error'),
-            data: (data) => Text(data),
-          ),
+          switch (result) {
+            (Data d) => Text(d.data),
+            (Error e) => Text('Error: ${e.error}'),
+            (_) => const CircularProgressIndicator()
+          },
           SizedBox(height: 16),
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             FilledButton.icon(

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'async_notifier.dart';
 import 'extensions.dart';
@@ -232,7 +233,7 @@ class CombineLatestNotifier<S, R> extends ResultNotifier<R> with EffectNotifier<
 ///
 /// See for instance [SyncEffectNotifier] and [AsyncEffectNotifier] for concrete implementations.
 mixin EffectNotifier<S, R> on ResultNotifier<R> {
-  final List<Disposer> _disposables = [];
+  final List<VoidCallback> _disposables = [];
 
   /// If true, any [Loading] state of the input notifiers will be ignored, and the previous result will be kept.
   bool get ignoreLoading;
@@ -259,17 +260,20 @@ mixin EffectNotifier<S, R> on ResultNotifier<R> {
   }
 
   void _onSourceResult(Result result) {
-    result.when(
-      data: (_) => refresh(force: true), // i.e. run the effect whenever source presents new data
-      loading: (_) => toLoading(),
-      error: (error, stackTrace, data) => toError(error: error, stackTrace: stackTrace),
-    );
+    switch (result) {
+      case final Data _:
+        refresh(force: true);
+      case final Loading _:
+        toLoading();
+      case final Error e:
+        toError(error: e.error, stackTrace: e.stackTrace);
+    }
   }
 
   void _withSourceData(ResultListenable<S> source, void Function(S sourceData) dataEffect) {
-    source.value.whenOr(
-      data: dataEffect,
-    );
+    if (source.value case final Data<S> d) {
+      dataEffect(d.data);
+    }
   }
 }
 

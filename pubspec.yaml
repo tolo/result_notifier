@@ -1,6 +1,6 @@
 name: result_notifier
-description: Pragmatic state management for Flutter, based on familiar and platform-native concepts
-version: 0.4.1+1
+description: Pragmatic enhancements to vanilla Flutter state management
+version: 0.5.0
 homepage: https://github.com/tolo/result_notifier
 
 environment:
@@ -11,7 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  meta: ^1.11.0
+  meta: any # Pinned by the Flutter SDK
 
 dev_dependencies:
   flutter_test:
@@ -21,6 +21,8 @@ dev_dependencies:
 topics:
   - state-management
   - state
+  - async
+  - notifier
   - reactive
   - watch
   - provider

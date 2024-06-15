@@ -1,3 +1,13 @@
+## 0.5.0
+
+* BREAKING: Removed methods `when`, `whenOr` and `whenData` from `Result` - replace with pattern matching (i.e. 
+  `switch`) on `Result`.
+* BREAKING: Removed `ResultBuilder` - replace with `ValueListenableBuilder`, method `builder` (on `ResultNotifier` or 
+  `ResultListenable`) or the `watch` method (on `ResultNotifier` or `ValueListenable`).
+* BREAKING: `future` getter in `ResultNotifier` will now only return a value on `isData` instead of `hasData`.
+* Added `future` setter in `ResultNotifier`.
+* Removed Disposer typedef and replaced with VoidCallback. 
+
 ## 0.4.1+1
 
 * Added relevant topics to `pubspec.yaml`.

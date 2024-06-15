@@ -1,17 +1,20 @@
 # Result Notifier
 
-**Pragmatic and magic-free state management for Flutter - simply [lagom](https://en.wikipedia.org/wiki/Lagom).**
+**Pragmatic quality-of-life enhancements to vanilla Flutter state management - simply [lagom](https://en.wikipedia.org/wiki/Lagom).**
 
 ![result_notifier.png](https://raw.githubusercontent.com/tolo/result_notifier/main/doc/assets/result_notifier.jpg)
 
-Result Notifier is a simple and modest package for state management, based on familiar and platform-native concepts,
-rather than introducing new abstractions and mental models. In fact, the package really is little more than a few
-additions to [ValueNotifier](https://api.flutter.dev/flutter/foundation/ValueNotifier-class.html) and
-[ChangeNotifier](https://api.flutter.dev/flutter/foundation/ChangeNotifier-class.html) (ok, perhaps slightly more than a few, but nothing crazy). As the name of this package
+**Result Notifier** is a simple and modest package for enhancing the state management that Flutter already provides out 
+of the box. In other words, it's based on familiar and platform-native concepts, rather than introducing new 
+abstractions and mental models. In fact, the package really is little more than a few additions to [ValueNotifier](https://api.flutter.dev/flutter/foundation/ValueNotifier-class.html) 
+and [ChangeNotifier](https://api.flutter.dev/flutter/foundation/ChangeNotifier-class.html) (ok, perhaps slightly more than a few, but nothing crazy). As the name of this package
 alludes to, one of the most important additions is the concept of a **Result** type, which can represent either some
 **Data**, an **Error** or a **Loading** state.
 
 [![style: lint](https://img.shields.io/badge/style-lint-4BC0F5.svg)](https://pub.dev/packages/lint)
+
+_**Note: v0.5.0 contains breaking changes - see [changelog](https://pub.dev/packages/result_notifier/changelog).**_
+
 
 ## The essence of Result Notifier
 
@@ -19,8 +22,8 @@ There are basically four concepts that
 make **[ResultNotifier](https://pub.dev/documentation/result_notifier/latest/result_notifier/ResultNotifier-class.html)**
 different from `ValueNotifier` and `ChangeNotifier`:
 
-* It holds a **[Result](https://pub.dev/documentation/result_notifier/latest/result_notifier/Result-class.html)** value and provides methods for accessing and mutating the value. The value (result) can 
-  be in one of three different states:
+* It holds a **[Result](https://pub.dev/documentation/result_notifier/latest/result_notifier/Result-class.html)** value (an [algebraic data type](https://dart.dev/language/patterns#algebraic-data-types)) 
+  and provides methods for accessing and mutating the value. The value (result) can be in one of three different states:
     - **[Data](https://pub.dev/documentation/result_notifier/latest/result_notifier/Data-class.html)**: The result contains some concrete data.
     - **[Error](https://pub.dev/documentation/result_notifier/latest/result_notifier/Error-class.html)**: Represents an error, along with the *previous* data, if any.
     - **[Loading](https://pub.dev/documentation/result_notifier/latest/result_notifier/Loading-class.html)**: Represents a loading/reloading state, along with the *previous* data, if any.
@@ -30,11 +33,13 @@ different from `ValueNotifier` and `ChangeNotifier`:
   considered stale.
 * It's **composable** - you can easily combine the data of multiple `ResultNotifier`s (and even other `ValueListenable`s)
   using `CombineLatestNotifier` or for instance apply an effect using `EffectNotifier`. 
- 
- 
+
+
 ## Getting Started
 
-Simply [add the dependency](https://pub.dev/packages/result_notifier/install) and start writing some notifiers! 
+1. Simply [add the dependency](https://pub.dev/packages/result_notifier/install) and start writing some notifiers!
+2. Dive into the starter [example](https://pub.dev/packages/result_notifier/example) (see more [here](https://github.com/tolo/result_notifier/blob/main/example/lib)) 
+   <br/>**Or** - just follow along below for a quick introduction to the basic concepts of Result Notifier. 👇
 
 
 ### A simple start
@@ -43,19 +48,33 @@ The simplest form of notifier only holds a value, much like a `ValueNotifier`. B
 wrapped in a `Result` type, which can represent either some data, an error, or a loading state.
 
 ```dart
-
 final notifier = ResultNotifier<String>(data: 'Hello...');
-notifier.toLoading(); // Convenience method to set the value to Loading, keeping the previous data.
 print(notifier.data); // Prints 'Hello...'
-notifier.value = Data('Hello Flutter!');
-// or:
+print(notifier.result); // Prints 'Data<String>(data: Hello..., lastUpdate: 2024-01-02 03:04:05.000006)'
+
+notifier.toLoading(); // Convenience method to set the value to Loading, keeping the previous data.
+// Example use of some of the read-only properties for getting the current state of the notifier:
+notifier.isLoading;
+notifier.isData;
+notifier.isError;
+notifier.hasData;
+// If using cache `expiration`, you can also check if the data is fresh or stale:
+notifier.isFresh;
+notifier.isStale;
+
+// Set the a new data value (Data) using the actual data type directly, replacing the previous value/result:
 notifier.data = 'Hello Flutter!';
+// Or, set the value to a new Result (in this case Data), replacing the previous value/result:
+notifier.value = Data('Hello Flutter!');
+// or, set the value using a Future: 
+notifier.future = Future.value('Hello again Flutter!');
+// await notifier.future; // Optionally, wait for the future to complete.
 ``` 
 <br/>
 
 ### Fetching async data (e.g. from an API)
 
-Often you'll want to do something a little more elaborate, like fetching data from an API. In this case, you can
+Often you'll want to do something a little more elaborate, like fetching data from an API. In this case, you can use
 `FutureNotifier` (or ResultNotifier.future), which is a `ResultNotifier` that uses a "fetcher" function that returns a
 Future.
 
@@ -66,8 +85,16 @@ final notifier = ResultNotifier<String>.future(
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     return json['activity'] as String;
   },
+  data: 'Test in production' // Optionally, set an initial value.
+  expiration: const Duration(seconds: 42), // Optionally, set a cache expiration.
 );
+
+// Refresh the data (i.e. call the fetcher function to udpate the data of the notifier):
+notifier.refresh();
 ``` 
+
+Read more in the *Caching* section below. 
+
 <br/>
 
 ## Observing (listening, watching...) changes
@@ -75,17 +102,16 @@ final notifier = ResultNotifier<String>.future(
 ### ValueListenableBuilder-based observation
 
 Since `ResultNotifier` implements `ValueListenable`, you can simply use `ValueListenableBuilder` to observe changes in
-a Widget. However, this package also provides a class
-called [ResultBuilder](https://pub.dev/documentation/result_notifier/latest/result_notifier/ResultBuilder-class.html),
-which makes it even easier to handle the different states of the result.
+a Widget. However, this package also provides a method (`builder`) on 
+[ResultBuilder](https://pub.dev/documentation/result_notifier/latest/result_notifier/ResultBuilder-class.html),
+which makes this a bit more convenient.
 
 ```dart
-ResultBuilder<String>(
-  notifier,
-  onLoading: (context, data) => const CircularProgressIndicator(),
-  onError: (context, error, stackTrace, data) => Text('Error: $error'),
-  onData: (context, data) => Text(data),
-),
+notifier.builder((context, result, child) => switch (result) {
+  (Data d) => Text(d.data),
+  (Error e) => Text('Error: ${e.error}'),
+  (_) => const CircularProgressIndicator()
+}),
 ``` 
 <br/>
 
@@ -100,11 +126,11 @@ architectural style though, mainly because of a narrower scope and the fact that
 ```dart
 Watcher(builder: (context) {
   final result = notifier.watch(context);
-  return Text(result.when(
-    data: (data) => data,
-    loading: (data) => 'Loading - $data',
-    error: (error, _, data) => 'Error - $data - $error',
-  ));
+  return Text(switch (result) {
+    (Data<String> d) => d.data,
+    (Loading<String> l) => 'Loading - ${l.data}',
+    (Error<String> e) => 'Error - ${e.data} - ${e.error}',
+  });
 });
 ```
 <br/>
@@ -138,24 +164,38 @@ Watcher(builder: (context) {
   final result1 = notifier1.watch(context);
   final result2 = notifier2.watch(context);
   final combined = [result1, result2].combine((data) => '${data[0]} and ${data[1]}');
-  return Text(combined.when(
-    data: (data) => data,
-    loading: (data) => 'Loading - $data',
-    error: (error, _, data) => 'Error - $data - $error',
-  ));
+  return Text(switch (result) {
+    (Data<String> d) => d.data,
+    (Loading<String> l) => 'Loading - ${l.data}',
+    (Error<String> e) => 'Error - ${e.data} - ${e.error}',
+  });
 });
 ``` 
 <br/>
 
 ## Going deeper
 
-### Cache expiration
+### Caching
 
 When using remote data, it's common to cache the data for some period of time and refresh it when it's stale. This
 can be accomplished by setting the `cacheDuration` to an appropriate value. But remember that **caching is one of the
 roots of all evil**, so don't enable it unless you're sure you really need it, and only when you're finished
 implementing the core functionality of your app. 
 
+```dart
+final notifier = ResultNotifier<String>.future(
+  (_) async { ... },
+  data: 'Test in production' // Optionally, set an initial value.
+  expiration: const Duration(seconds: 42), // Optionally, set a cache expiration.
+);
+
+// If using cache `expiration`, you can also check if the data is fresh or stale:
+notifier.isFresh; // Returns true in this example
+notifier.isStale; // Returns false in this example
+
+// Refresh the data (i.e. call the fetcher function to udpate the data of the notifier):
+notifier.refresh(); // In this example, the data will only be updated if refresh is called after 42 seconds has passed.
+``` 
 
 ### Effects
 

@@ -4,43 +4,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:result_notifier/result_notifier.dart';
 
 void main() {
-  group('ResultBuilder - init', () {
-    testWidgets('ResultBuilder.result allows single builder and catch-all', (tester) async {
-      expect(
-        () => ResultBuilder.result(
-          ResultNotifier<String>(data: 'Data'),
-          onData: (_, d) => Text(d),
-          onResult: (_, r) => Text(r.toString()),
-        ),
-        returnsNormally,
-      );
-    });
-
-    testWidgets('ResultBuilder.result throws if all builders and catch-all', (tester) async {
-      expect(
-        () => ResultBuilder.result(
-          ResultNotifier<String>(data: 'Data'),
-          onData: (_, d) => Text(d),
-          onLoading: (_, d) => Text('Loading - $d'),
-          onError: (_, e, st, d) => Text('Error - $d - $e'),
-          onResult: (_, r) => Text(r.toString()),
-        ),
-        throwsAssertionError,
-      );
-    });
-  });
-
   group('ResultBuilder - build', () {
     testWidgets('ResultBuilder returns correct widget for state', (tester) async {
       final notifier = ResultNotifier<String>(data: 'Data');
 
       final app = MaterialApp(
-        home: ResultBuilder(
-          notifier,
-          onData: (context, data) => Text(data),
-          onError: (context, error, stackTrace, data) => Text('Error - $data - $error'),
-          onLoading: (context, data) => Text('Loading - $data'),
-        ),
+        home: notifier.builder((context, result, child) => switch (result) {
+              (final Data<String> d) => Text(d.data),
+              (final Error<String> e) => Text('Error - ${e.data} - ${e.error}'),
+              (final Loading<String> l) => Text('Loading - ${l.data}'),
+            }),
       );
 
       await tester.pumpWidget(app);
@@ -59,11 +32,10 @@ void main() {
       final notifier = ResultNotifier<String>(data: 'Data');
 
       final app = MaterialApp(
-        home: ResultBuilder.data(
-          notifier,
-          hasData: (context, data) => Text(data),
-          orElse: (context, result) => Text('No data - loading: ${result.isLoading} - error: ${result.error}'),
-        ),
+        home: notifier.builder((context, result, child) => switch (result) {
+              (final Data<String> d) => Text(d.data),
+              (final Result<String> r) => Text('No data - loading: ${r.isLoading} - error: ${r.error}'),
+            }),
       );
 
       await tester.pumpWidget(app);
@@ -82,12 +54,11 @@ void main() {
       final notifier = ResultNotifier<String>(data: 'Data');
 
       final app = MaterialApp(
-        home: ResultBuilder.result(
-          notifier,
-          onData: (context, data) => Text(data),
-          onResult: (context, result) =>
-              Text('Catch-all - data: ${result.data} - loading: ${result.isLoading} - error: ${result.error}'),
-        ),
+        home: notifier.builder((context, result, child) => switch (result) {
+              (final Data<String> d) => Text(d.data),
+              (final Result<String> r) =>
+                Text('Catch-all - data: ${r.data} - loading: ${r.isLoading} - error: ${r.error}'),
+            }),
       );
 
       await tester.pumpWidget(app);
@@ -108,14 +79,11 @@ void main() {
       final notifier = ResultNotifier<String>(data: 'Data');
 
       final app = MaterialApp(
-        home: ValueListenableBuilder(
-          valueListenable: notifier,
-          builder: (context, result, _) => result.when(
-            data: (data) => Text(data),
-            error: (error, stackTrace, data) => Text('Error - $data - $error'),
-            loading: (data) => Text('Loading - $data'),
-          ),
-        ),
+        home: notifier.builder((context, result, child) => switch (result) {
+              (final Data<String> d) => Text(d.data),
+              (final Error<String> e) => Text('Error - ${e.data} - ${e.error}'),
+              (final Loading<String> l) => Text('Loading - ${l.data}'),
+            }),
       );
 
       await tester.pumpWidget(app);
@@ -138,12 +106,11 @@ void main() {
       final app = MaterialApp(
         home: ResourceProvider(
           create: (context) => notifier = ResultNotifier<String>(data: 'Data'),
-          builder: (context, notifier) => ResultBuilder(
-            notifier,
-            onData: (context, data) => Text(data),
-            onError: (context, error, stackTrace, data) => Text('Error - $data - $error'),
-            onLoading: (context, data) => Text('Loading - $data'),
-          ),
+          builder: (context, notifier) => notifier.builder((context, result, child) => switch (result) {
+                (final Data<String> d) => Text(d.data),
+                (final Error<String> e) => Text('Error - ${e.data} - ${e.error}'),
+                (final Loading<String> l) => Text('Loading - ${l.data}'),
+              }),
         ),
       );
       await tester.pumpWidget(app);

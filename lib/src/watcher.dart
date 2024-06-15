@@ -63,7 +63,7 @@ extension ListenableWatcher on Listenable {
   /// {@endtemplate}
   void watch(WatcherRef ref) => ref.watch(this);
 
-  Disposer _subscribe(VoidCallback listener) {
+  VoidCallback _subscribe(VoidCallback listener) {
     addListener(listener);
     return () => removeListener(listener);
   }
@@ -192,7 +192,7 @@ mixin _ListenableWatcherElement on ComponentElement implements WatcherContext {
   static _ListenableWatcherElement? _currentElement;
 
   final _listenablesInUse = HashSet<Listenable>.identity();
-  final _subscriptions = HashMap<Listenable, Disposer>.identity();
+  final _subscriptions = HashMap<Listenable, VoidCallback>.identity();
 
   void _disposeUnused() {
     _subscriptions.removeWhere((listenable, disposer) {
@@ -210,7 +210,7 @@ mixin _ListenableWatcherElement on ComponentElement implements WatcherContext {
     The `watch` method can only be called from the build method of a widget that mix-in `WatcherMixin` or `StatefulWatcherMixin`.
     ''');
 
-    Disposer subscribe() {
+    VoidCallback subscribe() {
       return listenable._subscribe(() {
         if (_subscriptions[listenable] != null) {
           markNeedsBuild();
