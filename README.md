@@ -1,17 +1,20 @@
 # Result Notifier
 
-**Pragmatic quality-of-life enhancements of vanilla Flutter state management - simply [lagom](https://en.wikipedia.org/wiki/Lagom).**
+**Pragmatic quality-of-life enhancements to vanilla Flutter state management - simply [lagom](https://en.wikipedia.org/wiki/Lagom).**
 
 ![result_notifier.png](https://raw.githubusercontent.com/tolo/result_notifier/main/doc/assets/result_notifier.jpg)
 
 **Result Notifier** is a simple and modest package for enhancing the state management that Flutter already provides out 
 of the box. In other words, it's based on familiar and platform-native concepts, rather than introducing new 
 abstractions and mental models. In fact, the package really is little more than a few additions to [ValueNotifier](https://api.flutter.dev/flutter/foundation/ValueNotifier-class.html) 
-and[ChangeNotifier](https://api.flutter.dev/flutter/foundation/ChangeNotifier-class.html) (ok, perhaps slightly more than a few, but nothing crazy). As the name of this package
+and [ChangeNotifier](https://api.flutter.dev/flutter/foundation/ChangeNotifier-class.html) (ok, perhaps slightly more than a few, but nothing crazy). As the name of this package
 alludes to, one of the most important additions is the concept of a **Result** type, which can represent either some
 **Data**, an **Error** or a **Loading** state.
 
 [![style: lint](https://img.shields.io/badge/style-lint-4BC0F5.svg)](https://pub.dev/packages/lint)
+
+_**Note: v0.5.0 contains breaking changes - see [changelog](https://pub.dev/packages/result_notifier/changelog).**_
+
 
 ## The essence of Result Notifier
 
@@ -30,11 +33,13 @@ different from `ValueNotifier` and `ChangeNotifier`:
   considered stale.
 * It's **composable** - you can easily combine the data of multiple `ResultNotifier`s (and even other `ValueListenable`s)
   using `CombineLatestNotifier` or for instance apply an effect using `EffectNotifier`. 
- 
- 
+
+
 ## Getting Started
 
-Simply [add the dependency](https://pub.dev/packages/result_notifier/install) and start writing some notifiers! 
+1. Simply [add the dependency](https://pub.dev/packages/result_notifier/install) and start writing some notifiers!
+2. Dive into the starter [example](https://pub.dev/packages/result_notifier/example) (see more [here](https://github.com/tolo/result_notifier/blob/main/example/lib)) 
+   <br/>**Or** - just follow along below for a quick introduction to the basic concepts of Result Notifier. 👇
 
 
 ### A simple start
@@ -49,10 +54,10 @@ print(notifier.result); // Prints 'Data<String>(data: Hello..., lastUpdate: 2024
 
 notifier.toLoading(); // Convenience method to set the value to Loading, keeping the previous data.
 // Example use of some of the read-only properties for getting the current state of the notifier:
-notifier.isLoading; // Returns true.
-notifier.isData; // Returns false.
-notifier.isError; // Returns false.
-notifier.hasData; // Returns true.
+notifier.isLoading;
+notifier.isData;
+notifier.isError;
+notifier.hasData;
 // If using cache `expiration`, you can also check if the data is fresh or stale:
 notifier.isFresh;
 notifier.isStale;
