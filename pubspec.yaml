@@ -11,7 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
 
-  meta: any # Pinned by the Flutter SDK
+  meta: ^1.12.0 # Pinned by the Flutter SDK
 
 dev_dependencies:
   flutter_test:
