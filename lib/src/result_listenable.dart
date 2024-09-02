@@ -135,6 +135,7 @@ abstract mixin class ResultListenable<T> implements ValueListenable<Result<T>> {
     R Function(Object? error)? onErrorReturn,
     bool autoReset = false,
     bool refreshOnError = false,
+    bool immediate = false,
     bool ignoreLoading = false,
   }) {
     return SyncEffectNotifier(
@@ -147,6 +148,7 @@ abstract mixin class ResultListenable<T> implements ValueListenable<Result<T>> {
       onErrorReturn: onErrorReturn,
       autoReset: autoReset,
       refreshOnError: refreshOnError,
+      immediate: immediate,
       ignoreLoading: ignoreLoading,
     );
   }
@@ -175,6 +177,7 @@ abstract mixin class ResultListenable<T> implements ValueListenable<Result<T>> {
     R Function(Object? error)? onErrorReturn,
     bool autoReset = false,
     bool refreshOnError = false,
+    bool immediate = false,
     bool ignoreLoading = false,
   }) {
     return AsyncEffectNotifier(
@@ -187,6 +190,7 @@ abstract mixin class ResultListenable<T> implements ValueListenable<Result<T>> {
       onErrorReturn: onErrorReturn,
       autoReset: autoReset,
       refreshOnError: refreshOnError,
+      immediate: immediate,
       ignoreLoading: ignoreLoading,
     );
   }
