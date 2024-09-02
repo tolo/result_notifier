@@ -18,7 +18,7 @@ void main() {
 
     test('Initial result', () {
       final fetcher = Fetcher();
-      final notifier = ResultNotifier<String>(onFetch: fetcher.onFetch, result: Data('data'));
+      final notifier = ResultNotifier<String>(onFetch: fetcher.onFetch, result: Data(data: 'data'));
       expect(notifier.isData, true);
       expect(notifier.isStale, false);
       expect(notifier.isLoading, false);
@@ -194,7 +194,7 @@ void main() {
 
     test('Fetch IS invoked after data has expired', () async {
       final fetcher = Fetcher(touch: true);
-      final initialData = Data('data');
+      final initialData = Data(data: 'data');
       final notifier = ResultNotifier<String>(
         result: initialData,
         onFetch: fetcher.onFetch,
@@ -212,7 +212,7 @@ void main() {
 
     test('Fetch IS always invoked when there is no cache expiration', () async {
       final fetcher = Fetcher(touch: true);
-      final initialData = Data('data');
+      final initialData = Data(data: 'data');
       final notifier = ResultNotifier<String>(result: initialData, onFetch: fetcher.onFetch);
       expect(notifier.isFresh, true);
       expect(notifier.value, isA<Data<String>>());
@@ -518,10 +518,10 @@ void main() {
         combineData: (data) => data[0] + data[1],
       )..refresh();
 
-      notifier1.value = Data('Hello ');
+      notifier1.value = Data(data: 'Hello ');
       expect(combined.data, equals('Hello '));
 
-      notifier2.value = Data('World');
+      notifier2.value = Data(data: 'World');
       expect(combined.data, equals('Hello World'));
     });
 
@@ -533,8 +533,8 @@ void main() {
         combineData: (data) => data[0] + data[1],
       )..refresh();
 
-      notifier1.value = Data('Hello ');
-      notifier2.value = Data('World');
+      notifier1.value = Data(data: 'Hello ');
+      notifier2.value = Data(data: 'World');
       expect(combined.data, equals('Hello World'));
       expect(combined.isLoading, isFalse);
 
@@ -551,8 +551,8 @@ void main() {
         combineData: (data) => data[0] + data[1],
       )..refresh();
 
-      notifier1.value = Data('Hello ');
-      notifier2.value = Data('World');
+      notifier1.value = Data(data: 'Hello ');
+      notifier2.value = Data(data: 'World');
       expect(combined.data, equals('Hello World'));
       expect(combined.isError, isFalse);
 

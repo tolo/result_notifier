@@ -78,7 +78,7 @@ class FutureNotifier<T> extends ResultNotifier<T> {
   });
 
   static void Function(ResultNotifier<T>) _onFetch<T>(FetchAsync<T> fetch) {
-    FutureOr<Result<T>> fetchResult(ResultNotifier<T> not) async => Data(await fetch(not));
+    FutureOr<Result<T>> fetchResult(ResultNotifier<T> not) async => Data(data: await fetch(not));
     return (not) => (not as FutureNotifier<T>).performFetch(fetchResult);
   }
 
@@ -159,7 +159,7 @@ class StreamNotifier<T> extends ResultNotifier<T> {
   });
 
   static void Function(ResultNotifier<T>) _onFetch<T>(FetchStream<T> fetch) {
-    Stream<Result<T>> fetchResult(StreamNotifier<T> not) => fetch(not).map((event) => Data(event));
+    Stream<Result<T>> fetchResult(StreamNotifier<T> not) => fetch(not).map((event) => Data(data: event));
     return (not) => (not as StreamNotifier<T>).performFetch(fetchResult);
   }
 

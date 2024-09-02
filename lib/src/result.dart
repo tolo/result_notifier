@@ -18,11 +18,11 @@ import 'exceptions.dart';
 /// instance [when]. Example:
 ///
 /// ```
-/// result.when(
-///   loading: (data) => const CircularProgressIndicator(),
-///   error: (error, stackTrace, data) => Text('Error: $error'),
-///   data: (data) => Text(data),
-/// ),
+/// switch (result) {
+///   Data(data: var d) => Text(d),
+///   Error(error: var e) => Text('Error: $e'),
+///   Loading() => const CircularProgressIndicator(),
+/// }
 /// ```
 @immutable
 sealed class Result<T> {
@@ -99,7 +99,7 @@ sealed class Result<T> {
   Result<T> toData({T? data, T Function()? orElse, DateTime? lastUpdate}) {
     if (hasData || data != null || orElse != null) {
       return Data(
-        data ?? this.data ?? orElse!.call(),
+        data: data ?? this.data ?? orElse!.call(),
         lastUpdate: lastUpdate ?? DateTime.now(),
       );
     } else {
@@ -193,7 +193,7 @@ final class Loading<T> extends Result<T> {
 /// Represents a result containing actual data.
 final class Data<T> extends Result<T> {
   /// Creates a Data, with a last update time set to the current time (i.e. fresh).
-  Data(this.data, {super.lastUpdate}) : super._();
+  Data({required this.data, super.lastUpdate}) : super._();
 
   /// Creates a Data, with a last update time set to a value indicating stale data (i.e. needing refresh).
   Data.stale(this.data) : super._(lastUpdate: _staleDateTime);
@@ -207,7 +207,7 @@ final class Data<T> extends Result<T> {
 
   @override
   Result<T> copyWith({T? data, DateTime? lastUpdate}) =>
-      Data(data ?? this.data, lastUpdate: lastUpdate ?? this.lastUpdate);
+      Data(data: data ?? this.data, lastUpdate: lastUpdate ?? this.lastUpdate);
 
   @override
   String toString() => 'Data<$T>(data: $data, lastUpdate: $lastUpdate)';

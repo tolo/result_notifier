@@ -50,9 +50,9 @@ class ActivityPage extends StatelessWidget {
         ),
         body: Center(
           child: activityRepository.builder((context, result, child) => switch (result) {
-                (Data d) => Text(d.data),
-                (Error e) => Text('Error: ${e.error}'),
-                (_) => const CircularProgressIndicator()
+                Data(data: var d) => Text(d),
+                Error(error: var e) => Text('Error: $e'),
+                Loading() => const CircularProgressIndicator(),
               }),
         ),
         floatingActionButton: FloatingActionButton.extended(

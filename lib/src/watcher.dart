@@ -115,11 +115,11 @@ abstract class WatcherWidget extends StatelessWidget with WatcherMixin {
 /// ```
 /// Watcher(builder: (context) {
 ///   final result = notifier.watch(context);
-///   return Text(result.when(
-///     data: (data) => data,
-///     loading: (data) => 'Loading - $data',
-///     error: (error, _, data) => 'Error - $data - $error',
-///   ));
+///   return Text(switch (result) {
+///     Data(data: var d) => d,
+///     Error(error: var e, data: var d) => 'Error ($e) - $d',
+///     Loading(data: var d) => d != null ? 'Loading - $d' : 'Loading...',
+///   });
 /// })
 /// ```
 ///

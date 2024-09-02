@@ -195,7 +195,7 @@ abstract mixin class ResultListenable<T> implements ValueListenable<Result<T>> {
     );
   }
 
-  /// Creates a new asynchronous [EffectNotifier] that executes the provided strean effect the data of this
+  /// Creates a new asynchronous [EffectNotifier] that executes the provided stream effect the data of this
   /// notifier changes.
   ///
   /// See [StreamEffectNotifier].

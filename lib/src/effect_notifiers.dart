@@ -430,7 +430,7 @@ class AsyncEffectNotifier<S, R> extends FutureNotifier<R> with EffectNotifier<S,
   static ResultNotifierCallback<R> _asyncEffect<S, R>(ResultListenable<S> source, AsyncEffect<S, R> effect) {
     return (not) {
       (not as AsyncEffectNotifier<S, R>)._withSourceData(source, (sourceData) {
-        not.performFetch((not) async => Data(await effect(not, sourceData)));
+        not.performFetch((not) async => Data(data: await effect(not, sourceData)));
       });
     };
   }
@@ -515,7 +515,7 @@ class StreamEffectNotifier<S, R> extends StreamNotifier<R> with EffectNotifier<S
   static ResultNotifierCallback<R> _effect<S, R>(ResultListenable<S> source, StreamEffect<S, R> effect) {
     return (not) {
       (not as StreamEffectNotifier<S, R>)._withSourceData(source, (sourceData) {
-        not.performFetch((not) => effect(not, sourceData).map((event) => Data(event)));
+        not.performFetch((not) => effect(not, sourceData).map((event) => Data(data: event)));
       });
     };
   }

@@ -94,7 +94,7 @@ extension ResultIterableEffects<S> on Iterable<Result<S>> {
     } else if (loading || data == null) {
       return Loading(data: data);
     } else {
-      return Data(data);
+      return Data(data: data);
     }
   }
 

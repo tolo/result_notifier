@@ -76,13 +76,13 @@ class ActivityPage extends WatcherWidget {
       ),
       body: Center(
         child: Column(children: [
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           switch (result) {
             (Data d) => Text(d.data),
             (Error e) => Text('Error: ${e.error}'),
             (_) => const CircularProgressIndicator()
           },
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             FilledButton.icon(
               icon: const Icon(Icons.check_box),
@@ -94,7 +94,7 @@ class ActivityPage extends WatcherWidget {
                     }
                   : null,
             ),
-            SizedBox(width: 16),
+            const SizedBox(width: 16),
             FilledButton.icon(
               icon: const Icon(Icons.refresh),
               label: const Text('New activity suggestion'),

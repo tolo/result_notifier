@@ -62,7 +62,7 @@ class ResultNotifier<T> extends ChangeNotifier with ResultListenable<T> {
     bool refreshOnError = false,
   })  : willAutoReset = autoReset,
         willRefreshOnError = refreshOnError,
-        _value = data != null ? Data(data) : result ?? Initial<T>();
+        _value = data != null ? Data(data: data) : result ?? Initial<T>();
 
   /// Creates a [FutureNotifier] that fetches data asynchronously, when needed.
   ///
@@ -161,7 +161,7 @@ class ResultNotifier<T> extends ChangeNotifier with ResultListenable<T> {
   }
 
   /// Set the [value] of this notifier as a [Data] Result, containing the specified data.
-  set data(T newValue) => value = Data(newValue);
+  set data(T newValue) => value = Data(data: newValue);
 
   /// Get the [Result.data] of the current Result [value], or null if no data is available (i.e. [hasData] is false).
   T? get dataOrNull => value.data;
@@ -378,7 +378,7 @@ class ResultNotifier<T> extends ChangeNotifier with ResultListenable<T> {
   /// exception). If this notifier was cancelled during the asynchronous gap, the result of the function call will be
   /// ignored and an ([Future.error]) will be returned by this method (i.e. [CancelledException]).
   Future<T> setDataAsync(FutureOr<T> Function() fetchData) async {
-    return setResultAsync(() async => Data(await fetchData()))
+    return setResultAsync(() async => Data(data: await fetchData()))
         .then((r) => r.isError ? throw (r as Error).error : r.data!);
   }
 
@@ -395,7 +395,7 @@ class ResultNotifier<T> extends ChangeNotifier with ResultListenable<T> {
   /// Instead of using the Future returned by this method, consider using [future] instead, which will await the next
   /// successful data or error result of this notifier.
   Future<void> updateDataAsync(FutureOr<T> Function() fetchData) async {
-    await setResultAsync(() async => Data(await fetchData()));
+    await setResultAsync(() async => Data(data: await fetchData()));
   }
 
   /// Sets the [value] (result) of this notifier asynchronously using the result returned by the provided function.

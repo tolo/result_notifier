@@ -43,7 +43,7 @@ class AsyncFetcher {
     fetchCount++;
     await Future.delayed(const Duration(milliseconds: 10));
     if (notifier.isCancelled || !notifier.isActive) throw CancelledException();
-    final result = await Future.delayed(delay, () => Data(id));
+    final result = await Future.delayed(delay, () => Data(data: id));
     if (notifier.isCancelled || !notifier.isActive) throw CancelledException();
     return result;
   }

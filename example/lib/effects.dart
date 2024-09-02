@@ -77,12 +77,12 @@ class ActivityState extends State<ActivityPage> {
                 decoration: const InputDecoration(hintText: 'Name 2'),
                 onChanged: (value) => name2.data = value,
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
               Text('Result: ', style: Theme.of(context).textTheme.headlineMedium),
               result.builder((context, result, child) => switch (result) {
-                    (Data d) => Text(d.data, style: Theme.of(context).textTheme.bodyLarge),
-                    (Error e) => Text('Error: ${e.error}'),
-                    (_) => const CircularProgressIndicator()
+                    Data(data: var d) => Text(d, style: Theme.of(context).textTheme.bodyLarge),
+                    Error(error: var e) => Text('Error: $e'),
+                    Loading() => const CircularProgressIndicator(),
                   }),
             ],
           ),
