@@ -1,3 +1,7 @@
+## 0.6.0
+* BREAKING: Updated `Data` constructor to use named parameters for better algebraic data type support.
+* Added immediate parameter to effect & asyncEffect methods on ResultListenable mixin/base class.
+
 ## 0.5.0
 
 * BREAKING: Removed methods `when`, `whenOr` and `whenData` from `Result` - replace with pattern matching (i.e. 

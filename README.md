@@ -34,6 +34,27 @@ different from `ValueNotifier` and `ChangeNotifier`:
 * It's **composable** - you can easily combine the data of multiple `ResultNotifier`s (and even other `ValueListenable`s)
   using `CombineLatestNotifier` or for instance apply an effect using `EffectNotifier`. 
 
+### Algebraic data types support in `Result`
+As mentioned above, `Result` is an algebraic data type, which means you can use it in switch statements like this: 
+
+```dart
+switch (result) {
+  Data(data: var d, lastUpdate: var t) => Text(d),
+  Error(error: var e, stackTrace: var s, data: var d, lastUpdate: var t) => Text('Error: $e'),
+  Loading(data: var d, lastUpdate: var t) => const CircularProgressIndicator(), 
+}
+```
+
+...or simply like this (whatever floats your boat): 
+
+```dart
+switch (result) {
+  (Data d) => Text(d.data),
+  (Error e) => Text('Error: ${e.error}'),
+  (_) => const CircularProgressIndicator()
+}
+```
+<br/>
 
 ## Getting Started
 
@@ -108,9 +129,9 @@ which makes this a bit more convenient.
 
 ```dart
 notifier.builder((context, result, child) => switch (result) {
-  (Data d) => Text(d.data),
-  (Error e) => Text('Error: ${e.error}'),
-  (_) => const CircularProgressIndicator()
+  Data(data: var d) => Text(d),
+  Error(error: var e) => Text('Error: $e'),
+  Loading() => const CircularProgressIndicator(),
 }),
 ``` 
 <br/>
@@ -127,9 +148,9 @@ architectural style though, mainly because of a narrower scope and the fact that
 Watcher(builder: (context) {
   final result = notifier.watch(context);
   return Text(switch (result) {
-    (Data<String> d) => d.data,
-    (Loading<String> l) => 'Loading - ${l.data}',
-    (Error<String> e) => 'Error - ${e.data} - ${e.error}',
+    Data(data: var d) => d,
+    Error(error: var e, data: var d) => 'Error - $d - $e',
+    Loading(data: var d) => 'Loading - $d',
   });
 });
 ```
