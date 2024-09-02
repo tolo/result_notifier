@@ -5,4 +5,4 @@ linter:
     always_use_package_imports: false
     require_trailing_commas: false
     unawaited_futures: true
-
+    lines_longer_than_80_chars: false

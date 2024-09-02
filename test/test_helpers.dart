@@ -19,7 +19,8 @@ class Fetcher {
 }
 
 class AsyncFetcher {
-  AsyncFetcher({required this.id, int delayMs = 10}) : delay = Duration(milliseconds: delayMs);
+  AsyncFetcher({required this.id, int delayMs = 10})
+      : delay = Duration(milliseconds: delayMs);
   final String id;
   final Duration delay;
   int fetchCount = 0;
@@ -55,6 +56,7 @@ class AsyncFetcher {
   }
 }
 
-class StreamableNotifier<T> extends ResultNotifier<T> with StreamableResultNotifierMixin<T> {
+class StreamableNotifier<T> extends ResultNotifier<T>
+    with StreamableResultNotifierMixin<T> {
   StreamableNotifier({super.data});
 }

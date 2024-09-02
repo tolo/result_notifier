@@ -5,10 +5,15 @@ import 'package:meta/meta.dart';
 import 'result.dart';
 import 'result_notifier.dart';
 
-typedef CreateResultNotifier<K, T> = ResultNotifier<T> Function(K key, ResultStore<K, T> store);
-typedef ResultNotifierOnDispose<K, T> = void Function(K key, ResultNotifier<T> strore);
+typedef CreateResultNotifier<K, T> = ResultNotifier<T> Function(
+    K key, ResultStore<K, T> store);
+typedef ResultNotifierOnDispose<K, T> = void Function(
+    K key, ResultNotifier<T> strore);
 
-typedef _CacheEntry<T> = ({ResultNotifier<T> notifier, VoidCallback removeListener});
+typedef _CacheEntry<T> = ({
+  ResultNotifier<T> notifier,
+  VoidCallback removeListener
+});
 
 /// A [ChangeNotifier] that creates and caches [ResultNotifier]s for a given key, and optionally disposes them when
 /// they are no longer used.
@@ -56,7 +61,8 @@ class ResultStore<K, T> extends ChangeNotifier {
 
   @override
   void dispose() {
-    _cache.forEach((key, cacheEntry) => _disposeNotifier(key, cacheEntry, willAutoDispose));
+    _cache.forEach((key, cacheEntry) =>
+        _disposeNotifier(key, cacheEntry, willAutoDispose));
     _cache.clear();
     autoDisposeTimer?.cancel();
     super.dispose();
@@ -97,10 +103,15 @@ class ResultStore<K, T> extends ChangeNotifier {
 
   @protected
   @visibleForTesting
-  ResultNotifier<T> getNotifier(K key, {bool shouldRefresh = false, bool force = false, bool alwaysTouch = false}) {
+  ResultNotifier<T> getNotifier(K key,
+      {bool shouldRefresh = false,
+      bool force = false,
+      bool alwaysTouch = false}) {
     var notifier = _cache[key]?.notifier;
     if (notifier != null && shouldRefresh) {
-      Future.microtask(() => notifier!.isActive ? notifier.refresh(force: force, alwaysTouch: alwaysTouch) : null);
+      Future.microtask(() => notifier!.isActive
+          ? notifier.refresh(force: force, alwaysTouch: alwaysTouch)
+          : null);
     } else if (notifier == null) {
       notifier = (_cache[key] = _createNotifier(key)).notifier;
       _updateAutoDisposeTimer();
@@ -149,14 +160,18 @@ class ResultStore<K, T> extends ChangeNotifier {
   ///
   /// See [ResultNotifier.refresh] for more information.
   void refresh(K key, {bool force = false, bool alwaysTouch = false}) {
-    getNotifier(key, shouldRefresh: true, force: force, alwaysTouch: alwaysTouch);
+    getNotifier(key,
+        shouldRefresh: true, force: force, alwaysTouch: alwaysTouch);
   }
 
   /// Refreshes the [ResultNotifier] with the specified key, if needed, and awaits the result.
   ///
   /// See [ResultNotifier.refreshAwait] for more information.
-  Future<T> refreshAwait(K key, {bool force = false, bool alwaysTouch = false}) {
-    return getNotifier(key, shouldRefresh: true, force: force, alwaysTouch: alwaysTouch).future;
+  Future<T> refreshAwait(K key,
+      {bool force = false, bool alwaysTouch = false}) {
+    return getNotifier(key,
+            shouldRefresh: true, force: force, alwaysTouch: alwaysTouch)
+        .future;
   }
 
   /// Cancels any ongoing fetch operation for the ResultNotifier with the specified key.
@@ -190,7 +205,8 @@ class ResultStore<K, T> extends ChangeNotifier {
 
   /// Removes all cached ResultNotifiers, and disposes them if parameter `disposeNotifiers` or [willAutoDispose] is true.
   void clear({bool? disposeNotifiers}) {
-    _cache.forEach((key, cacheEntry) => _disposeNotifier(key, cacheEntry, disposeNotifiers ?? willAutoDispose));
+    _cache.forEach((key, cacheEntry) =>
+        _disposeNotifier(key, cacheEntry, disposeNotifiers ?? willAutoDispose));
     _cache.clear();
     _updateAutoDisposeTimer();
   }
@@ -198,7 +214,9 @@ class ResultStore<K, T> extends ChangeNotifier {
   _CacheEntry<T> _createNotifier(K key) {
     void onNotifierResult(Result<T> result) {
       _currentModification = (key: key, result: result);
-      _lastUpdate = _lastUpdate.isBefore(result.lastUpdate) ? result.lastUpdate : _lastUpdate;
+      _lastUpdate = _lastUpdate.isBefore(result.lastUpdate)
+          ? result.lastUpdate
+          : _lastUpdate;
       try {
         notifyListeners();
       } finally {
@@ -211,12 +229,14 @@ class ResultStore<K, T> extends ChangeNotifier {
     // to touch it to trigger the lister for the first time when a new ResultNotifier is created.
     final needsTouch = !notifier.isInitial;
     final disposer = notifier.onResult(onNotifierResult);
-    if (needsTouch) Future.microtask(() => notifier.isActive ? notifier.touch() : null);
-
+    if (needsTouch) {
+      Future.microtask(() => notifier.isActive ? notifier.touch() : null);
+    }
     return (notifier: notifier, removeListener: disposer);
   }
 
-  void _disposeNotifier(K key, _CacheEntry<T> cacheEntry, bool disposeNotifiers) {
+  void _disposeNotifier(
+      K key, _CacheEntry<T> cacheEntry, bool disposeNotifiers) {
     cacheEntry.removeListener();
     if (disposeNotifiers) {
       onDispose?.call(key, cacheEntry.notifier);
@@ -225,9 +245,11 @@ class ResultStore<K, T> extends ChangeNotifier {
   }
 
   void _updateAutoDisposeTimer() {
-    final useAutoDisposeTimer = hasListeners && _cache.isNotEmpty && willAutoDispose;
+    final useAutoDisposeTimer =
+        hasListeners && _cache.isNotEmpty && willAutoDispose;
     if (useAutoDisposeTimer && autoDisposeTimer == null) {
-      autoDisposeTimer = Timer.periodic(autoDisposeTimerInterval, (_) => _autoDisposeIfNeeded());
+      autoDisposeTimer = Timer.periodic(
+          autoDisposeTimerInterval, (_) => _autoDisposeIfNeeded());
     } else if (!useAutoDisposeTimer) {
       autoDisposeTimer?.cancel();
       autoDisposeTimer = null;

@@ -40,11 +40,13 @@ class ActivityState extends State<ActivityPage> {
   @override
   void initState() {
     ResultNotifier<String> activity = name1.asyncEffect(_fetchActivityEffect);
-    result = activity.combineLatest(name2, combineData: (sources) => '${sources[0]} with ${sources[1]}');
+    result = activity.combineLatest(name2,
+        combineData: (sources) => '${sources[0]} with ${sources[1]}');
     super.initState();
   }
 
-  Future<String> _fetchActivityEffect(ResultNotifier<String> notifier, String input) async {
+  Future<String> _fetchActivityEffect(
+      ResultNotifier<String> notifier, String input) async {
     // ignore: avoid_print
     currentName = input;
     await Future.delayed(const Duration(milliseconds: 500)); // Dramatic Pause
@@ -52,7 +54,8 @@ class ActivityState extends State<ActivityPage> {
       print('Name changed - aborting activity fetch');
     }
     print('Fetching for random activity for "$input"');
-    final response = await http.get(Uri.parse('https://www.boredapi.com/api/activity/'));
+    final response =
+        await http.get(Uri.parse('https://www.boredapi.com/api/activity/'));
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     return '$input wants to ${json['activity'] as String}';
   }
@@ -78,9 +81,11 @@ class ActivityState extends State<ActivityPage> {
                 onChanged: (value) => name2.data = value,
               ),
               const SizedBox(height: 20),
-              Text('Result: ', style: Theme.of(context).textTheme.headlineMedium),
+              Text('Result: ',
+                  style: Theme.of(context).textTheme.headlineMedium),
               result.builder((context, result, child) => switch (result) {
-                    Data(data: var d) => Text(d, style: Theme.of(context).textTheme.bodyLarge),
+                    Data(data: var d) =>
+                      Text(d, style: Theme.of(context).textTheme.bodyLarge),
                     Error(error: var e) => Text('Error: $e'),
                     Loading() => const CircularProgressIndicator(),
                   }),

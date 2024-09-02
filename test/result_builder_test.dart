@@ -5,7 +5,8 @@ import 'package:result_notifier/result_notifier.dart';
 
 void main() {
   group('ResultBuilder - build', () {
-    testWidgets('ResultBuilder returns correct widget for state', (tester) async {
+    testWidgets('ResultBuilder returns correct widget for state',
+        (tester) async {
       final notifier = ResultNotifier<String>(data: 'Data');
 
       final app = MaterialApp(
@@ -28,13 +29,15 @@ void main() {
       expect(find.text('Error - Data - E'), findsOneWidget);
     });
 
-    testWidgets('ResultBuilder.data returns correct widget for state', (tester) async {
+    testWidgets('ResultBuilder.data returns correct widget for state',
+        (tester) async {
       final notifier = ResultNotifier<String>(data: 'Data');
 
       final app = MaterialApp(
         home: notifier.builder((context, result, child) => switch (result) {
               (final Data<String> d) => Text(d.data),
-              (final Result<String> r) => Text('No data - loading: ${r.isLoading} - error: ${r.error}'),
+              (final Result<String> r) =>
+                Text('No data - loading: ${r.isLoading} - error: ${r.error}'),
             }),
       );
 
@@ -43,21 +46,23 @@ void main() {
 
       notifier.value = Loading();
       await tester.pumpAndSettle();
-      expect(find.text('No data - loading: true - error: null'), findsOneWidget);
+      expect(
+          find.text('No data - loading: true - error: null'), findsOneWidget);
 
       notifier.value = Error(error: 'E');
       await tester.pumpAndSettle();
       expect(find.text('No data - loading: false - error: E'), findsOneWidget);
     });
 
-    testWidgets('ResultBuilder.result returns correct widget for state', (tester) async {
+    testWidgets('ResultBuilder.result returns correct widget for state',
+        (tester) async {
       final notifier = ResultNotifier<String>(data: 'Data');
 
       final app = MaterialApp(
         home: notifier.builder((context, result, child) => switch (result) {
               (final Data<String> d) => Text(d.data),
-              (final Result<String> r) =>
-                Text('Catch-all - data: ${r.data} - loading: ${r.isLoading} - error: ${r.error}'),
+              (final Result<String> r) => Text(
+                  'Catch-all - data: ${r.data} - loading: ${r.isLoading} - error: ${r.error}'),
             }),
       );
 
@@ -66,11 +71,13 @@ void main() {
 
       notifier.toLoading();
       await tester.pumpAndSettle();
-      expect(find.text('Catch-all - data: Data - loading: true - error: null'), findsOneWidget);
+      expect(find.text('Catch-all - data: Data - loading: true - error: null'),
+          findsOneWidget);
 
       notifier.toError(error: 'E');
       await tester.pumpAndSettle();
-      expect(find.text('Catch-all - data: Data - loading: false - error: E'), findsOneWidget);
+      expect(find.text('Catch-all - data: Data - loading: false - error: E'),
+          findsOneWidget);
     });
   });
 
@@ -106,11 +113,13 @@ void main() {
       final app = MaterialApp(
         home: ResourceProvider(
           create: (context) => notifier = ResultNotifier<String>(data: 'Data'),
-          builder: (context, notifier) => notifier.builder((context, result, child) => switch (result) {
-                (final Data<String> d) => Text(d.data),
-                (final Error<String> e) => Text('Error - ${e.data} - ${e.error}'),
-                (final Loading<String> l) => Text('Loading - ${l.data}'),
-              }),
+          builder: (context, notifier) =>
+              notifier.builder((context, result, child) => switch (result) {
+                    (final Data<String> d) => Text(d.data),
+                    (final Error<String> e) =>
+                      Text('Error - ${e.data} - ${e.error}'),
+                    (final Loading<String> l) => Text('Loading - ${l.data}'),
+                  }),
         ),
       );
       await tester.pumpWidget(app);

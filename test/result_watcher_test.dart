@@ -31,7 +31,8 @@ void main() {
       expect(find.text('Error - Data - E'), findsOneWidget);
     });
 
-    testWidgets('Multiple watches results in single subscription', (tester) async {
+    testWidgets('Multiple watches results in single subscription',
+        (tester) async {
       final not = TestNotifier('1');
       final shouldWatch = ValueNotifier(true);
 
@@ -61,7 +62,8 @@ void main() {
       expect(not.listenersCount, equals(0));
     });
 
-    testWidgets('Watcher returns correct widget for multiple notifiers', (tester) async {
+    testWidgets('Watcher returns correct widget for multiple notifiers',
+        (tester) async {
       final message = ResultNotifier<String>();
       final counter = ResultNotifier<int>(data: 0);
 
@@ -95,7 +97,8 @@ void main() {
       expect(find.text('Error'), findsOneWidget);
     });
 
-    testWidgets('Watcher removes listener when Listenable is no longer watched', (tester) async {
+    testWidgets('Watcher removes listener when Listenable is no longer watched',
+        (tester) async {
       final notA = TestNotifier('1');
       final notB = TestNotifier('1');
       bool listenA = true;
@@ -185,7 +188,8 @@ void main() {
       expect(notB.gotListeners, isFalse);
     });
 
-    testWidgets('Watch must be performed in build of Watcher/WatcherMixin', (tester) async {
+    testWidgets('Watch must be performed in build of Watcher/WatcherMixin',
+        (tester) async {
       final not = TestNotifier('1');
 
       final app = MaterialApp(

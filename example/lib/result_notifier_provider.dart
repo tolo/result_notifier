@@ -17,7 +17,8 @@ ResultNotifier<String> createActivityRepository(BuildContext context) {
       // ignore: avoid_print
       print('Fetching for random activity');
       await Future.delayed(const Duration(milliseconds: 500)); // Dramatic Pause
-      final response = await http.get(Uri.parse('https://www.boredapi.com/api/activity/'));
+      final response =
+          await http.get(Uri.parse('https://www.boredapi.com/api/activity/'));
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return json['activity'] as String;
     },
@@ -38,7 +39,8 @@ class ResultNotifierBuilderApp extends StatelessWidget {
       title: 'ResultNotifierBuilderApp',
       home: ResourceProvider(
         create: createActivityRepository,
-        builder: (context, activityRepository) => ActivityPage(activityRepository: activityRepository),
+        builder: (context, activityRepository) =>
+            ActivityPage(activityRepository: activityRepository),
       ),
     );
   }

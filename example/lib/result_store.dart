@@ -35,8 +35,10 @@ class RepositoryProvider extends ResourceProvider<ResultStore<String, String>> {
         /// Fetch activities for a specific type from Bored API.
         // ignore: avoid_print
         print('Fetching for type $type');
-        await Future.delayed(const Duration(milliseconds: 1500)); // Dramatic Pause
-        final response = await http.get(Uri.parse('https://www.boredapi.com/api/activity?type=$type'));
+        await Future.delayed(
+            const Duration(milliseconds: 1500)); // Dramatic Pause
+        final response = await http
+            .get(Uri.parse('https://www.boredapi.com/api/activity?type=$type'));
         final json = jsonDecode(response.body) as Map<String, dynamic>;
         return json['activity'] as String;
       }, onReset: (_) {
@@ -81,17 +83,23 @@ class ActivityPage extends StatelessWidget {
             ActivityTypeWidget(
               title: 'Recreational activity',
               activity: activityRepository.value('recreational'),
-              refresh: () => activityRepository.refresh('recreational', force: true),
+              refresh: () =>
+                  activityRepository.refresh('recreational', force: true),
               cancel: () => activityRepository.cancel('recreational'),
             ),
-            const Padding(padding: EdgeInsets.symmetric(vertical: 16, horizontal: 64), child: Divider()),
+            const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16, horizontal: 64),
+                child: Divider()),
             ActivityTypeWidget(
               title: 'Relaxing activity',
               activity: activityRepository.value('relaxation'),
-              refresh: () => activityRepository.refresh('relaxation', force: true),
+              refresh: () =>
+                  activityRepository.refresh('relaxation', force: true),
               cancel: () => activityRepository.cancel('relaxation'),
             ),
-            const Padding(padding: EdgeInsets.symmetric(vertical: 16, horizontal: 64), child: Divider()),
+            const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16, horizontal: 64),
+                child: Divider()),
             ActivityTypeWidget(
               title: 'Social activity',
               activity: activityRepository.value('social'),
@@ -123,14 +131,16 @@ class ActivityTypeWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        Text(title,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         switch (activity) {
           (Data d) => Text(d.data),
           // Here, we first check if the error was due to cancellation before showing how to present the error. Another
           // way to check if the error was due to cancellation is see if the error is of type CancelledException.
-          (Error e) =>
-            activity.isCancelled ? Text('${e.data} (cancelled)') : Text('Error: ${e.error}, last data: ${e.data}'),
+          (Error e) => activity.isCancelled
+              ? Text('${e.data} (cancelled)')
+              : Text('Error: ${e.error}, last data: ${e.data}'),
           // In this example, we take the opportunity to show the existing data along with the
           // CircularProgressIndicator when loading
           (Loading l) => Row(
@@ -139,7 +149,10 @@ class ActivityTypeWidget extends StatelessWidget {
                 if (l.data != null) Text(l.data),
                 const Padding(
                   padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator()),
+                  child: SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator()),
                 ),
               ],
             )

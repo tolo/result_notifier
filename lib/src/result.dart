@@ -130,7 +130,8 @@ sealed class Result<T> {
   /// {@template result.toError}
   /// Attempts to convert the result to [Error].
   /// {@endtemplate}
-  Result<T> toError({Object? error, StackTrace? stackTrace, T? data, DateTime? lastUpdate}) {
+  Result<T> toError(
+      {Object? error, StackTrace? stackTrace, T? data, DateTime? lastUpdate}) {
     return Error(
       error: error ?? ResultNotifierException(message: 'Unknown'),
       stackTrace: stackTrace,
@@ -156,7 +157,8 @@ sealed class Result<T> {
             runtimeType == other.runtimeType &&
             (identical(data, other.data) || data == other.data) &&
             (identical(error, other.error) || error == other.error) &&
-            (identical(lastUpdate, other.lastUpdate) || lastUpdate == other.lastUpdate));
+            (identical(lastUpdate, other.lastUpdate) ||
+                lastUpdate == other.lastUpdate));
   }
 
   @override
@@ -168,8 +170,8 @@ final class Initial<T> extends Loading<T> {
   Initial({super.data, super.lastUpdate});
 
   @override
-  Result<T> copyWith({T? data, DateTime? lastUpdate}) =>
-      Initial(data: data ?? this.data, lastUpdate: lastUpdate ?? this.lastUpdate);
+  Result<T> copyWith({T? data, DateTime? lastUpdate}) => Initial(
+      data: data ?? this.data, lastUpdate: lastUpdate ?? this.lastUpdate);
 
   @override
   String toString() => 'Initial<$T>(data: $data, lastUpdate: $lastUpdate)';
@@ -183,8 +185,8 @@ final class Loading<T> extends Result<T> {
   final T? data;
 
   @override
-  Result<T> copyWith({T? data, DateTime? lastUpdate}) =>
-      Loading(data: data ?? this.data, lastUpdate: lastUpdate ?? this.lastUpdate);
+  Result<T> copyWith({T? data, DateTime? lastUpdate}) => Loading(
+      data: data ?? this.data, lastUpdate: lastUpdate ?? this.lastUpdate);
 
   @override
   String toString() => 'Loading<$T>(data: $data, lastUpdate: $lastUpdate)';
@@ -216,7 +218,8 @@ final class Data<T> extends Result<T> {
 /// Represents an error, along with the previous data, if any.
 final class Error<T> extends Result<T> {
   /// Created a Error.
-  Error({required this.error, this.stackTrace, this.data, super.lastUpdate}) : super._();
+  Error({required this.error, this.stackTrace, this.data, super.lastUpdate})
+      : super._();
 
   /// Creates a Error indicating there was no data ([NoDataException]).
   Error.noData({this.data, super.lastUpdate})
@@ -259,14 +262,19 @@ final class Error<T> extends Result<T> {
 
   @override
   bool operator ==(Object other) {
-    return super == other && other is Error && error == other.error && stackTrace == other.stackTrace;
+    return super == other &&
+        other is Error &&
+        error == other.error &&
+        stackTrace == other.stackTrace;
   }
 
   @override
-  int get hashCode => Object.hash(super.hashCode, error, stackTrace, isCancelled);
+  int get hashCode =>
+      Object.hash(super.hashCode, error, stackTrace, isCancelled);
 
   @override
-  String toString() => 'Error<$T>(error: $error, stackTrack: $stackTrace, data: $data, lastUpdate: $lastUpdate)';
+  String toString() =>
+      'Error<$T>(error: $error, stackTrack: $stackTrace, data: $data, lastUpdate: $lastUpdate)';
 }
 
 final DateTime _staleDateTime = DateTime.fromMillisecondsSinceEpoch(0);

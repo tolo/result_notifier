@@ -164,11 +164,13 @@ mixin StatefulWatcherMixin on StatefulWidget {
 /// See also:
 /// - [WatcherState]
 /// - [StatefulWatcherMixin]
-abstract class StatefulWatcherWidget extends StatefulWidget with StatefulWatcherMixin {
+abstract class StatefulWatcherWidget extends StatefulWidget
+    with StatefulWatcherMixin {
   const StatefulWatcherWidget({super.key});
 
   @override
-  WatcherState createState() => createState(); // ignore: no_logic_in_create_state
+  WatcherState createState() =>
+      createState(); // ignore: no_logic_in_create_state
 }
 
 /// The [State] of a [StatefulWatcherWidget], that adds observability of [Listenable]s, through the [WatcherContext]
@@ -180,11 +182,13 @@ abstract class WatcherState<T extends StatefulWatcherMixin> extends State<T> {
 
 // Element implementations
 
-class _ListenableWatcherStatelessElement extends StatelessElement with _ListenableWatcherElement {
+class _ListenableWatcherStatelessElement extends StatelessElement
+    with _ListenableWatcherElement {
   _ListenableWatcherStatelessElement(super.widget);
 }
 
-class _ListenableWatcherStatefulElement extends StatefulElement with _ListenableWatcherElement {
+class _ListenableWatcherStatefulElement extends StatefulElement
+    with _ListenableWatcherElement {
   _ListenableWatcherStatefulElement(super.widget);
 }
 

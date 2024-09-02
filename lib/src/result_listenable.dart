@@ -8,7 +8,8 @@ import 'result_notifier.dart';
 
 /// Extension for converting a [ValueListenable] to a [ResultListenable].
 extension ValueListenableToResultListenable<T> on ValueListenable<T> {
-  ResultListenable<T> toResultListenable() => _ValueListenableResultAdapter(this);
+  ResultListenable<T> toResultListenable() =>
+      _ValueListenableResultAdapter(this);
 }
 
 /// Abstract class/mixin for [ValueListenable] subclasses that holds a [Result].
@@ -55,7 +56,8 @@ abstract mixin class ResultListenable<T> implements ValueListenable<Result<T>> {
   /// If the creation and disposal lifecycle of the ResultNotifier needs to be managed by the Widget, see instead
   /// [ResourceProvider].
   ValueListenableBuilder<Result<T>> builder(
-      Widget Function(BuildContext context, Result<T> result, Widget? child) builder,
+      Widget Function(BuildContext context, Result<T> result, Widget? child)
+          builder,
       {Widget? child}) {
     return ValueListenableBuilder<Result<T>>(
       valueListenable: this,
@@ -95,8 +97,13 @@ abstract mixin class ResultListenable<T> implements ValueListenable<Result<T>> {
   /// See also:
   /// - [onResult] for a more general listener.
   @useResult
-  VoidCallback onError(void Function(Object? error, StackTrace? stackTrace, T? data) listener) => onResult((result) {
-        if (result case final Error<T> error) listener(error.error, error.stackTrace, error.data);
+  VoidCallback onError(
+          void Function(Object? error, StackTrace? stackTrace, T? data)
+              listener) =>
+      onResult((result) {
+        if (result case final Error<T> error) {
+          listener(error.error, error.stackTrace, error.data);
+        }
       });
 
   /// Registers a listener ([addListener]) that will be invoked with the current Result ([value]).

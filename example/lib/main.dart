@@ -15,7 +15,8 @@ final activityRepository = ResultNotifier<String>.future(
     // ignore: avoid_print
     print('Fetching for random activity');
     await Future.delayed(const Duration(milliseconds: 500)); // Dramatic Pause
-    final response = await http.get(Uri.parse('https://www.boredapi.com/api/activity/'));
+    final response =
+        await http.get(Uri.parse('https://www.boredapi.com/api/activity/'));
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     return json['activity'] as String;
   },
@@ -49,14 +50,16 @@ class ActivityPage extends StatelessWidget {
           title: const Text('Activity suggestion'),
         ),
         body: Center(
-          child: activityRepository.builder((context, result, child) => switch (result) {
-                Data(data: var d) => Text(d),
-                Error(error: var e) => Text('Error: $e'),
-                Loading() => const CircularProgressIndicator(),
-              }),
+          child: activityRepository
+              .builder((context, result, child) => switch (result) {
+                    Data(data: var d) => Text(d),
+                    Error(error: var e) => Text('Error: $e'),
+                    Loading() => const CircularProgressIndicator(),
+                  }),
         ),
         floatingActionButton: FloatingActionButton.extended(
-          onPressed: () => activityRepository.refresh(), // Note: if the ResultNotifier was setup to use (cache)
+          onPressed: () => activityRepository
+              .refresh(), // Note: if the ResultNotifier was setup to use (cache)
           // expiration, we would have to pass `force: true` to the `refresh` method to force a new fetch.
           icon: const Icon(Icons.refresh),
           label: const Text('New activity suggestion'),

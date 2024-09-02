@@ -87,10 +87,14 @@ extension ResultIterableEffects<S> on Iterable<Result<S>> {
       }
     }
 
-    final R? data = notifierData.length == length ? combine(notifierData) : null;
+    final R? data =
+        notifierData.length == length ? combine(notifierData) : null;
 
     if (firstError != null) {
-      return Error(error: firstError.error, stackTrace: firstError.stackTrace, data: data);
+      return Error(
+          error: firstError.error,
+          stackTrace: firstError.stackTrace,
+          data: data);
     } else if (loading || data == null) {
       return Loading(data: data);
     } else {
@@ -171,46 +175,65 @@ typedef ResultTriple<A, B, C> = (Result<A>, Result<B>, Result<C>);
 extension ResultTripleMethods<A, B, C> on ResultTriple<A, B, C> {
   /// {@macro result_iterable_effects.combine}
   Result<R> combine<R>(R Function(A a, B b, C c) combine) {
-    return [$1, $2, $3].combine((data) => combine(data[0] as A, data[1] as B, data[2] as C));
+    return [$1, $2, $3]
+        .combine((data) => combine(data[0] as A, data[1] as B, data[2] as C));
   }
 
   /// {@macro result_iterable_effects.combineData}
   R? combineData<R>(R Function(A a, B b, C c) combine) {
-    return [$1, $2, $3].combineData((data) => combine(data[0] as A, data[1] as B, data[2] as C));
+    return [
+      $1,
+      $2,
+      $3
+    ].combineData((data) => combine(data[0] as A, data[1] as B, data[2] as C));
   }
 }
 
 /// Convenience record to enable easy access to typed extensions methods on [Result] (via [ResultQuadrupleMethods]).
-typedef ResultQuadruple<A, B, C, D> = (Result<A>, Result<B>, Result<C>, Result<D>);
+typedef ResultQuadruple<A, B, C, D> = (
+  Result<A>,
+  Result<B>,
+  Result<C>,
+  Result<D>
+);
 
 /// Record extension providing convenience extension methods.
 extension ResultQuadrupleMethods<A, B, C, D> on ResultQuadruple<A, B, C, D> {
   /// {@macro result_iterable_effects.combine}
   Result<R> combine<R>(R Function(A a, B b, C c, D d) combine) {
-    return [$1, $2, $3, $4].combine((data) => combine(data[0] as A, data[1] as B, data[2] as C, data[3] as D));
+    return [$1, $2, $3, $4].combine((data) =>
+        combine(data[0] as A, data[1] as B, data[2] as C, data[3] as D));
   }
 
   /// {@macro result_iterable_effects.combineData}
   R? combineData<R>(R Function(A a, B b, C c, D d) combine) {
-    return [$1, $2, $3, $4].combineData((data) => combine(data[0] as A, data[1] as B, data[2] as C, data[3] as D));
+    return [$1, $2, $3, $4].combineData((data) =>
+        combine(data[0] as A, data[1] as B, data[2] as C, data[3] as D));
   }
 }
 
 /// Convenience record to enable easy access to typed extensions methods on [Result] (via [ResultQuintupleMethods]).
-typedef ResultQuintuple<A, B, C, D, E> = (Result<A>, Result<B>, Result<C>, Result<D>, Result<E>);
+typedef ResultQuintuple<A, B, C, D, E> = (
+  Result<A>,
+  Result<B>,
+  Result<C>,
+  Result<D>,
+  Result<E>
+);
 
 /// Record extension providing convenience extension methods.
-extension ResultQuintupleMethods<A, B, C, D, E> on ResultQuintuple<A, B, C, D, E> {
+extension ResultQuintupleMethods<A, B, C, D, E>
+    on ResultQuintuple<A, B, C, D, E> {
   /// {@macro result_iterable_effects.combine}
   Result<R> combine<R>(R Function(A a, B b, C c, D d, E e) combine) {
-    return [$1, $2, $3, $4, $5]
-        .combine((data) => combine(data[0] as A, data[1] as B, data[2] as C, data[3] as D, data[4] as E));
+    return [$1, $2, $3, $4, $5].combine((data) => combine(
+        data[0] as A, data[1] as B, data[2] as C, data[3] as D, data[4] as E));
   }
 
   /// {@macro result_iterable_effects.combineData}
   R? combineData<R>(R Function(A a, B b, C c, D d, E e) combine) {
-    return [$1, $2, $3, $4, $5]
-        .combineData((data) => combine(data[0] as A, data[1] as B, data[2] as C, data[3] as D, data[4] as E));
+    return [$1, $2, $3, $4, $5].combineData((data) => combine(
+        data[0] as A, data[1] as B, data[2] as C, data[3] as D, data[4] as E));
   }
 }
 
@@ -224,7 +247,10 @@ extension ResultQuintupleMethods<A, B, C, D, E> on ResultQuintuple<A, B, C, D, E
 /// - [ResultListenableTriple]
 /// - [ResultListenableQuadruple]
 /// - [ResultListenableQuintuple]
-typedef ResultListenableTuple<A, B> = (ResultListenable<A>, ResultListenable<B>);
+typedef ResultListenableTuple<A, B> = (
+  ResultListenable<A>,
+  ResultListenable<B>
+);
 
 /// Record extension providing convenience extension methods.
 extension ResultListenableTupleMethods<A, B> on ResultListenableTuple<A, B> {
@@ -241,18 +267,28 @@ extension ResultListenableTupleMethods<A, B> on ResultListenableTuple<A, B> {
 
 /// Convenience record to enable easy access to typed extensions methods on [ResultNotifier] (or [ResultListenable])
 /// (via [ResultListenableTripleMethods]).
-typedef ResultListenableTriple<A, B, C> = (ResultListenable<A>, ResultListenable<B>, ResultListenable<C>);
+typedef ResultListenableTriple<A, B, C> = (
+  ResultListenable<A>,
+  ResultListenable<B>,
+  ResultListenable<C>
+);
 
 /// Record extension providing convenience extension methods.
-extension ResultListenableTripleMethods<A, B, C> on ResultListenableTriple<A, B, C> {
+extension ResultListenableTripleMethods<A, B, C>
+    on ResultListenableTriple<A, B, C> {
   /// {@macro result_iterable_effects.combine}
   Result<R> combine<R>(R Function(A a, B b, C c) combine) {
-    return [$1, $2, $3].combine((data) => combine(data[0] as A, data[1] as B, data[2] as C));
+    return [$1, $2, $3]
+        .combine((data) => combine(data[0] as A, data[1] as B, data[2] as C));
   }
 
   /// {@macro result_notifier_iterable_effects.combineData}
   R? combineData<R>(R Function(A a, B b, C c) combine) {
-    return [$1, $2, $3].combineData((data) => combine(data[0] as A, data[1] as B, data[2] as C));
+    return [
+      $1,
+      $2,
+      $3
+    ].combineData((data) => combine(data[0] as A, data[1] as B, data[2] as C));
   }
 }
 
@@ -266,15 +302,18 @@ typedef ResultListenableQuadruple<A, B, C, D> = (
 );
 
 /// Record extension providing convenience extension methods.
-extension ResultListenableQuadrupleMethods<A, B, C, D> on ResultListenableQuadruple<A, B, C, D> {
+extension ResultListenableQuadrupleMethods<A, B, C, D>
+    on ResultListenableQuadruple<A, B, C, D> {
   /// {@macro result_iterable_effects.combine}
   Result<R> combine<R>(R Function(A a, B b, C c, D d) combine) {
-    return [$1, $2, $3, $4].combine((data) => combine(data[0] as A, data[1] as B, data[2] as C, data[3] as D));
+    return [$1, $2, $3, $4].combine((data) =>
+        combine(data[0] as A, data[1] as B, data[2] as C, data[3] as D));
   }
 
   /// {@macro result_notifier_iterable_effects.combineData}
   R? combineData<R>(R Function(A a, B b, C c, D d) combine) {
-    return [$1, $2, $3, $4].combineData((data) => combine(data[0] as A, data[1] as B, data[2] as C, data[3] as D));
+    return [$1, $2, $3, $4].combineData((data) =>
+        combine(data[0] as A, data[1] as B, data[2] as C, data[3] as D));
   }
 }
 
@@ -289,16 +328,17 @@ typedef ResultListenableQuintuple<A, B, C, D, E> = (
 );
 
 /// Record extension providing convenience extension methods.
-extension ResultListenableQuintupleMethods<A, B, C, D, E> on ResultListenableQuintuple<A, B, C, D, E> {
+extension ResultListenableQuintupleMethods<A, B, C, D, E>
+    on ResultListenableQuintuple<A, B, C, D, E> {
   /// {@macro result_iterable_effects.combine}
   Result<R> combine<R>(R Function(A a, B b, C c, D d, E e) combine) {
-    return [$1, $2, $3, $4, $5]
-        .combine((data) => combine(data[0] as A, data[1] as B, data[2] as C, data[3] as D, data[4] as E));
+    return [$1, $2, $3, $4, $5].combine((data) => combine(
+        data[0] as A, data[1] as B, data[2] as C, data[3] as D, data[4] as E));
   }
 
   /// {@macro result_notifier_iterable_effects.combineData}
   R? combineData<R>(R Function(A a, B b, C c, D d, E e) combine) {
-    return [$1, $2, $3, $4, $5]
-        .combineData((data) => combine(data[0] as A, data[1] as B, data[2] as C, data[3] as D, data[4] as E));
+    return [$1, $2, $3, $4, $5].combineData((data) => combine(
+        data[0] as A, data[1] as B, data[2] as C, data[3] as D, data[4] as E));
   }
 }

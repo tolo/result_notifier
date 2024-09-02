@@ -1,6 +1,6 @@
 ## 0.6.0
 * BREAKING: Updated `Data` constructor to use named parameters for better algebraic data type support.
-* Added immediate parameter to effect & asyncEffect methods on ResultListenable mixin/base class.
+* Added `immediate` parameter to effect & asyncEffect methods on ResultListenable mixin/base class.
 
 ## 0.5.0
 

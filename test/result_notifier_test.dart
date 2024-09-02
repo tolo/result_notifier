@@ -18,7 +18,8 @@ void main() {
 
     test('Initial result', () {
       final fetcher = Fetcher();
-      final notifier = ResultNotifier<String>(onFetch: fetcher.onFetch, result: Data(data: 'data'));
+      final notifier = ResultNotifier<String>(
+          onFetch: fetcher.onFetch, result: Data(data: 'data'));
       expect(notifier.isData, true);
       expect(notifier.isStale, false);
       expect(notifier.isLoading, false);
@@ -28,7 +29,8 @@ void main() {
 
     test('Initial data', () {
       final fetcher = Fetcher();
-      final notifier = ResultNotifier<String>(onFetch: fetcher.onFetch, data: 'data');
+      final notifier =
+          ResultNotifier<String>(onFetch: fetcher.onFetch, data: 'data');
       expect(notifier.isData, true);
       expect(notifier.isStale, false);
       expect(notifier.isLoading, false);
@@ -38,7 +40,8 @@ void main() {
 
     test('toData (existing data)', () {
       final fetcher = Fetcher();
-      final notifier = ResultNotifier<String>(data: 'data', onFetch: fetcher.onFetch);
+      final notifier =
+          ResultNotifier<String>(data: 'data', onFetch: fetcher.onFetch);
       notifier.toLoading();
       expect(notifier.data, equals('data'));
       expect(notifier.isLoading, true);
@@ -85,7 +88,8 @@ void main() {
 
     test('toLoading', () {
       final fetcher = Fetcher();
-      final notifier = ResultNotifier<String>(onFetch: fetcher.onFetch, data: 'data');
+      final notifier =
+          ResultNotifier<String>(onFetch: fetcher.onFetch, data: 'data');
       notifier.toLoading();
       expect(notifier.isData, false);
       expect(notifier.isLoading, true);
@@ -96,7 +100,8 @@ void main() {
 
     test('toError', () {
       final fetcher = Fetcher();
-      final notifier = ResultNotifier<String>(onFetch: fetcher.onFetch, data: 'data');
+      final notifier =
+          ResultNotifier<String>(onFetch: fetcher.onFetch, data: 'data');
       notifier.toError(error: 'error');
       expect(notifier.isData, false);
       expect(notifier.isLoading, false);
@@ -149,7 +154,8 @@ void main() {
 
     test('Fetch is NOT invoked when loading', () {
       final fetcher = Fetcher();
-      final notifier = ResultNotifier<String>(data: 'test', onFetch: fetcher.onFetch);
+      final notifier =
+          ResultNotifier<String>(data: 'test', onFetch: fetcher.onFetch);
       notifier.toLoading();
       expect(notifier.value, isA<Loading<String>>());
       notifier.refresh();
@@ -169,7 +175,8 @@ void main() {
 
     test('Fetch IS invoked for fresh data when forced', () {
       final fetcher = Fetcher();
-      final notifier = ResultNotifier<String>(data: 'test', onFetch: fetcher.onFetch);
+      final notifier =
+          ResultNotifier<String>(data: 'test', onFetch: fetcher.onFetch);
       expect(notifier.value, isA<Data<String>>());
       notifier.refresh(force: true);
       expect(notifier.value, isA<Data<String>>());
@@ -213,7 +220,8 @@ void main() {
     test('Fetch IS always invoked when there is no cache expiration', () async {
       final fetcher = Fetcher(touch: true);
       final initialData = Data(data: 'data');
-      final notifier = ResultNotifier<String>(result: initialData, onFetch: fetcher.onFetch);
+      final notifier =
+          ResultNotifier<String>(result: initialData, onFetch: fetcher.onFetch);
       expect(notifier.isFresh, true);
       expect(notifier.value, isA<Data<String>>());
       expect(fetcher.didFetch, isFalse);
@@ -250,13 +258,15 @@ void main() {
       expect(notifier.data, equals('data'));
     });
 
-    test('Data correctly updated when calling setDataAsync with sync function', () async {
+    test('Data correctly updated when calling setDataAsync with sync function',
+        () async {
       final notifier = ResultNotifier<String>(data: 'initial');
       await notifier.setDataAsync(() => 'data');
       expect(notifier.data, equals('data'));
     });
 
-    test('Error is thrown when function passed to setDataAsync throws', () async {
+    test('Error is thrown when function passed to setDataAsync throws',
+        () async {
       final notifier = ResultNotifier<String>(data: 'initial');
       String? error;
       try {
@@ -268,7 +278,8 @@ void main() {
       expect(notifier.isError, isTrue);
     });
 
-    test('No error is thrown when function passed to updateDataAsync throws', () async {
+    test('No error is thrown when function passed to updateDataAsync throws',
+        () async {
       final notifier = ResultNotifier<String>(data: 'initial');
       await notifier.updateDataAsync(() => throw 'Error');
       expect(notifier.isError, isTrue);
@@ -328,8 +339,10 @@ void main() {
       });
       notifier.refresh();
       expect(notifier.isLoading, isTrue); // Loading is reported immediately
-      await Future.delayed(const Duration(milliseconds: 10)); // Delay a bit to allow fetch to start executing
-      expect(didNotifyOnLoading, isTrue); // Make sure loading was reported to listeners
+      await Future.delayed(const Duration(
+          milliseconds: 10)); // Delay a bit to allow fetch to start executing
+      expect(didNotifyOnLoading,
+          isTrue); // Make sure loading was reported to listeners
       final result = await notifier.future;
       expect(result, equals(fetcher.id));
       expect(fetcher.didFetch, isTrue);
@@ -340,9 +353,11 @@ void main() {
       final fetcher = AsyncFetcher(id: 'data', delayMs: 100);
       final notifier = ResultNotifier<String>.future(fetcher.fetch);
       notifier.refresh();
-      await Future.delayed(const Duration(milliseconds: 1)); // Delay a bit to allow fetch to start executing
+      await Future.delayed(const Duration(
+          milliseconds: 1)); // Delay a bit to allow fetch to start executing
       notifier.cancel();
-      await Future.delayed(const Duration(milliseconds: 50)); // Wait to give time for fetch to finish executing
+      await Future.delayed(const Duration(
+          milliseconds: 50)); // Wait to give time for fetch to finish executing
       expect(notifier.isCancelled, true);
       expect(notifier.isData, false);
       expect(notifier.hasData, false);
@@ -353,9 +368,11 @@ void main() {
       final fetcher = AsyncFetcher(id: 'data', delayMs: 100);
       final notifier = ResultNotifier<String>.future(fetcher.fetch);
       notifier.refresh();
-      await Future.delayed(const Duration(milliseconds: 1)); // Delay a bit to allow fetch to start executing
+      await Future.delayed(const Duration(
+          milliseconds: 1)); // Delay a bit to allow fetch to start executing
       notifier.dispose();
-      await Future.delayed(const Duration(milliseconds: 50)); // Wait to give time for fetch to finish executing
+      await Future.delayed(const Duration(
+          milliseconds: 50)); // Wait to give time for fetch to finish executing
       expect(notifier.isActive, false);
       expect(fetcher.didFetch, isTrue);
     });
@@ -363,7 +380,9 @@ void main() {
     test('Fetch after cancellation is performed', () async {
       final List<AsyncFetcher> fetchers = [];
       Future<String> fetch(ResultNotifier<String> n) {
-        final fetcher = AsyncFetcher(id: 'data${fetchers.length + 1}', delayMs: fetchers.isEmpty ? 100 : 10);
+        final fetcher = AsyncFetcher(
+            id: 'data${fetchers.length + 1}',
+            delayMs: fetchers.isEmpty ? 100 : 10);
         fetchers.add(fetcher);
         return fetcher.fetch(n);
       }
@@ -427,16 +446,20 @@ void main() {
 
       final notifier = StreamNotifier(fetch);
       notifier.refresh();
-      await Future.delayed(const Duration(milliseconds: 10)); // Delay a bit to allow first stream event to be emitted
+      await Future.delayed(const Duration(
+          milliseconds:
+              10)); // Delay a bit to allow first stream event to be emitted
       notifier.cancel();
-      await Future.delayed(const Duration(milliseconds: 50)); // Wait to give time for fetch to finish executing
+      await Future.delayed(const Duration(
+          milliseconds: 50)); // Wait to give time for fetch to finish executing
       expect(notifier.isCancelled, true);
       expect(notifier.isData, false);
       expect(notifier.hasData, true);
       expect(notifier.data, 'data1'); // First data should be available
     });
 
-    test('Stream fetch is correctly aborted when notifier is disposed', () async {
+    test('Stream fetch is correctly aborted when notifier is disposed',
+        () async {
       Stream<String> fetch(StreamNotifier<String> n) async* {
         yield 'data1';
         await Future.delayed(const Duration(milliseconds: 50));
@@ -453,9 +476,11 @@ void main() {
       final notifier = StreamNotifier(fetch);
       final disposer = notifier.onData(listener);
       notifier.refresh();
-      await Future.delayed(const Duration(milliseconds: 1)); // Delay a bit to allow fetch to start executing
+      await Future.delayed(const Duration(
+          milliseconds: 1)); // Delay a bit to allow fetch to start executing
       notifier.dispose();
-      await Future.delayed(const Duration(milliseconds: 50)); // Wait to give time for fetch to finish executing
+      await Future.delayed(const Duration(
+          milliseconds: 50)); // Wait to give time for fetch to finish executing
       expect(notifier.isActive, false);
       expect(invokeListenerCount, equals(1));
       expect(lastData, equals('data1'));
@@ -566,7 +591,9 @@ void main() {
       final notifier2 = ResultNotifier<int>(data: 1);
       String combineData(String a, int b) => a + b.toString();
 
-      final combined = CombineLatestNotifier.combine2(notifier1, notifier2, combineData: combineData)..refresh();
+      final combined = CombineLatestNotifier.combine2(notifier1, notifier2,
+          combineData: combineData)
+        ..refresh();
       expect(combined.data, equals('A1'));
 
       // Test the corresponding Record function
@@ -589,7 +616,8 @@ void main() {
       expect(combined.data, equals('A1B'));
 
       // Test the corresponding Record function
-      final combined3 = (notifier1, notifier2, notifier3).combineData(combineData);
+      final combined3 =
+          (notifier1, notifier2, notifier3).combineData(combineData);
       expect(combined3, equals('A1B'));
     });
 
@@ -598,7 +626,8 @@ void main() {
       final notifier2 = ResultNotifier<int>(data: 1);
       final notifier3 = ResultNotifier<String>(data: 'B');
       final notifier4 = ResultNotifier<int>(data: 2);
-      String combineData(String a, int b, String c, int d) => a + b.toString() + c + d.toString();
+      String combineData(String a, int b, String c, int d) =>
+          a + b.toString() + c + d.toString();
 
       final combined = CombineLatestNotifier.combine4(
         notifier1,
@@ -610,7 +639,8 @@ void main() {
       expect(combined.data, equals('A1B2'));
 
       // Test the corresponding Record function
-      final combined4 = (notifier1, notifier2, notifier3, notifier4).combineData(combineData);
+      final combined4 =
+          (notifier1, notifier2, notifier3, notifier4).combineData(combineData);
       expect(combined4, equals('A1B2'));
     });
 
@@ -620,7 +650,8 @@ void main() {
       final notifier3 = ResultNotifier<String>(data: 'B');
       final notifier4 = ResultNotifier<int>(data: 2);
       final notifier5 = ResultNotifier<String>(data: 'C');
-      String combineData(String a, int b, String c, int d, String e) => a + b.toString() + c + d.toString() + e;
+      String combineData(String a, int b, String c, int d, String e) =>
+          a + b.toString() + c + d.toString() + e;
 
       final combined = CombineLatestNotifier.combine5(
         notifier1,
@@ -633,7 +664,8 @@ void main() {
       expect(combined.data, equals('A1B2C'));
 
       // Test the corresponding Record function
-      final combined5 = (notifier1, notifier2, notifier3, notifier4, notifier5).combineData(combineData);
+      final combined5 = (notifier1, notifier2, notifier3, notifier4, notifier5)
+          .combineData(combineData);
       expect(combined5, equals('A1B2C'));
     });
   });
@@ -739,7 +771,8 @@ void main() {
     test('ResultNotifier iterable combine', () async {
       final notifier1 = ResultNotifier<String>();
       final notifier2 = ResultNotifier<String>(data: 'World');
-      Result<String> result = [notifier1, notifier2].combine((data) => '${data[0]}${data[1]}');
+      Result<String> result =
+          [notifier1, notifier2].combine((data) => '${data[0]}${data[1]}');
       expect(result.isLoading, isTrue);
       expect(result.data, isNull);
 
@@ -763,20 +796,24 @@ void main() {
     test('ResultNotifier iterable combineData', () async {
       final notifier1 = ResultNotifier<String>();
       final notifier2 = ResultNotifier<String>(data: 'World');
-      String? result = [notifier1, notifier2].combineData((data) => '${data[0]}${data[1]}');
+      String? result =
+          [notifier1, notifier2].combineData((data) => '${data[0]}${data[1]}');
       expect(result, isNull);
 
       notifier1.data = 'Hello ';
-      result = [notifier1, notifier2].combineData((data) => '${data[0]}${data[1]}');
+      result =
+          [notifier1, notifier2].combineData((data) => '${data[0]}${data[1]}');
       expect(result, equals('Hello World'));
 
       notifier2.toError();
-      result = [notifier1, notifier2].combineData((data) => '${data[0]}${data[1]}');
+      result =
+          [notifier1, notifier2].combineData((data) => '${data[0]}${data[1]}');
       expect(result, equals('Hello World'));
 
       notifier1.toLoading();
       notifier2.toData();
-      result = [notifier1, notifier2].combineData((data) => '${data[0]}${data[1]}');
+      result =
+          [notifier1, notifier2].combineData((data) => '${data[0]}${data[1]}');
       expect(result, equals('Hello World'));
     });
 

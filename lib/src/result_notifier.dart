@@ -167,7 +167,8 @@ class ResultNotifier<T> extends ChangeNotifier with ResultListenable<T> {
   T? get dataOrNull => value.data;
 
   Object? get error => value.error;
-  StackTrace? get stackTrace => value is Error ? (value as Error).stackTrace : null;
+  StackTrace? get stackTrace =>
+      value is Error ? (value as Error).stackTrace : null;
 
   /// If data or error is available, it will be returned directly (as [Future.value] / [Future.error]), otherwise a
   /// [Completer] will be used to await data or error.
@@ -195,7 +196,8 @@ class ResultNotifier<T> extends ChangeNotifier with ResultListenable<T> {
   bool get isAlwaysFresh => expiration == null;
 
   /// Checks if the current data is fresh, not stale, i.e. time since last update is less than [expiration] (if set).
-  bool get isFresh => isData && (expiration == null || _timeSinceLastUpdate < expiration!);
+  bool get isFresh =>
+      isData && (expiration == null || _timeSinceLastUpdate < expiration!);
 
   /// Returns true if the current data isn't fresh or if the current result isn't [Data].
   bool get isStale => !isFresh;
@@ -264,7 +266,8 @@ class ResultNotifier<T> extends ChangeNotifier with ResultListenable<T> {
   void refresh({bool force = false, bool alwaysTouch = false}) {
     assert(ChangeNotifier.debugAssertNotDisposed(this));
     if (!force && // Skip fetch if not forced and...
-        (isFresh && !isAlwaysFresh || // ...data is still fresh (and can expire) - or...
+        (isFresh &&
+                !isAlwaysFresh || // ...data is still fresh (and can expire) - or...
             isError &&
                 !isCancelled &&
                 !willRefreshOnError || // ...an error occurred, but refresh shouldn't be performed for errors - or...
@@ -320,7 +323,8 @@ class ResultNotifier<T> extends ChangeNotifier with ResultListenable<T> {
       if (result.isData || result.isError) {
         result.isData
             ? completer.complete(result.data)
-            : completer.completeError((result as Error<T>).error, result.stackTrace);
+            : completer.completeError(
+                (result as Error<T>).error, result.stackTrace);
         disposable?.call();
       }
     }
@@ -348,18 +352,29 @@ class ResultNotifier<T> extends ChangeNotifier with ResultListenable<T> {
 
   /// {@macro result.toData}
   Result<T> toData({T? data, T Function()? orElse, DateTime? lastUpdate}) {
-    return value = value.toData(data: data, orElse: orElse, lastUpdate: lastUpdate);
+    return value =
+        value.toData(data: data, orElse: orElse, lastUpdate: lastUpdate);
   }
 
   /// {@macro result.toLoading}
-  Result<T> toLoading({T? data, DateTime? lastUpdate}) => value = value.toLoading(data: data, lastUpdate: lastUpdate);
+  Result<T> toLoading({T? data, DateTime? lastUpdate}) =>
+      value = value.toLoading(data: data, lastUpdate: lastUpdate);
 
   /// {@macro result.toInitial}
-  Result<T> toInitial({T? data, DateTime? lastUpdate}) => value = value.toInitial(data: data, lastUpdate: lastUpdate);
+  Result<T> toInitial({T? data, DateTime? lastUpdate}) =>
+      value = value.toInitial(data: data, lastUpdate: lastUpdate);
 
   /// {@macro result.toError}
-  Result<T> toError({Object? error, StackTrace? stackTrace, T? data, DateTime? lastUpdate}) =>
-      value = value.toError(error: error, stackTrace: stackTrace, data: data, lastUpdate: lastUpdate);
+  Result<T> toError(
+          {Object? error,
+          StackTrace? stackTrace,
+          T? data,
+          DateTime? lastUpdate}) =>
+      value = value.toError(
+          error: error,
+          stackTrace: stackTrace,
+          data: data,
+          lastUpdate: lastUpdate);
 
   /// {@macro result.toCancelled}
   Result<T> toCancelled({T? data, DateTime? lastUpdate}) =>
@@ -411,7 +426,8 @@ class ResultNotifier<T> extends ChangeNotifier with ResultListenable<T> {
   /// The return value of this method is the current [value] (result) after executing the provided function. Instead of
   /// using this, consider using [future] instead, which will await the next successful data or error result of this
   /// notifier.
-  Future<Result<T>> setResultAsync(FutureOr<Result<T>> Function() fetchResult) async {
+  Future<Result<T>> setResultAsync(
+      FutureOr<Result<T>> Function() fetchResult) async {
     assert(ChangeNotifier.debugAssertNotDisposed(this));
     toLoading(); // Important to always create a new Loading value, to indicate a new loading operation has started
 

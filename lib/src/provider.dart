@@ -10,7 +10,8 @@ typedef CreateResource<T> = T Function(BuildContext context);
 typedef DisposeResource<T> = void Function(BuildContext context, T resource);
 
 /// Signature for functions that builds a Widget using a resource.
-typedef ResourceWidgetBuilder<T> = Widget Function(WatcherContext context, T resource);
+typedef ResourceWidgetBuilder<T> = Widget Function(
+    WatcherContext context, T resource);
 
 /// Convenience extensions on BuildContext that adds lookup of a resource provided by a [ResourceProvider].
 extension ResourceProviderContext on BuildContext {
@@ -65,7 +66,8 @@ class ResourceProvider<T> extends StatefulWatcherWidget {
     if (_create != null) {
       return _create(context);
     } else {
-      throw UnimplementedError('Provide a create function or override this method in a subclass.');
+      throw UnimplementedError(
+          'Provide a create function or override this method in a subclass.');
     }
   }
 
@@ -80,7 +82,8 @@ class ResourceProvider<T> extends StatefulWatcherWidget {
       resource.dispose();
     } else {
       (resource as dynamic).dispose(); // ignore: avoid_dynamic_calls
-      throw UnimplementedError('Provide a dispose function or override this method in a subclass.');
+      throw UnimplementedError(
+          'Provide a dispose function or override this method in a subclass.');
     }
   }
 
@@ -89,7 +92,8 @@ class ResourceProvider<T> extends StatefulWatcherWidget {
     if (_builder != null) {
       return _builder(context, resource);
     } else {
-      throw UnimplementedError('Provide a builder function or override this method in a subclass.');
+      throw UnimplementedError(
+          'Provide a builder function or override this method in a subclass.');
     }
   }
 
@@ -97,7 +101,8 @@ class ResourceProvider<T> extends StatefulWatcherWidget {
   WatcherState createState() => ResourceProviderState();
 
   /// Finds the nearest ancestor resource of type T in the Widget tree.
-  static T of<T>(BuildContext context) => _ResourceInheritedWidget.of<T>(context).resource;
+  static T of<T>(BuildContext context) =>
+      _ResourceInheritedWidget.of<T>(context).resource;
 }
 
 /// The state of a [ResourceProvider].
@@ -112,19 +117,23 @@ class ResourceProviderState<T> extends WatcherState<ResourceProvider<T>> {
 
   @override
   Widget build(WatcherContext context) {
-    return _ResourceInheritedWidget(resource: resource, child: widget.build(context, resource));
+    return _ResourceInheritedWidget(
+        resource: resource, child: widget.build(context, resource));
   }
 }
 
 class _ResourceInheritedWidget<T> extends InheritedWidget {
-  const _ResourceInheritedWidget({super.key, required this.resource, required super.child});
+  const _ResourceInheritedWidget(
+      {super.key, required this.resource, required super.child});
 
   final T resource;
 
   @override
-  bool updateShouldNotify(_ResourceInheritedWidget<T> oldWidget) => oldWidget.resource != resource;
+  bool updateShouldNotify(_ResourceInheritedWidget<T> oldWidget) =>
+      oldWidget.resource != resource;
 
   static _ResourceInheritedWidget<T> of<T>(BuildContext context) {
-    return context.dependOnInheritedWidgetOfExactType<_ResourceInheritedWidget<T>>()!;
+    return context
+        .dependOnInheritedWidgetOfExactType<_ResourceInheritedWidget<T>>()!;
   }
 }

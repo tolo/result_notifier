@@ -11,7 +11,8 @@ typedef FetchAsync<T> = FutureOr<T> Function(ResultNotifier<T> notifier);
 ///
 /// Use this fetcher function with the [FutureNotifier.result] constructor, when you need to control the result type in
 /// the fetch operation.
-typedef FetchResultAsync<T> = FutureOr<Result<T>> Function(ResultNotifier<T> notifier);
+typedef FetchResultAsync<T> = FutureOr<Result<T>> Function(
+    ResultNotifier<T> notifier);
 
 /// ResultNotifier subclass that supports fetching data asynchronously, on demand.
 ///
@@ -78,11 +79,13 @@ class FutureNotifier<T> extends ResultNotifier<T> {
   });
 
   static void Function(ResultNotifier<T>) _onFetch<T>(FetchAsync<T> fetch) {
-    FutureOr<Result<T>> fetchResult(ResultNotifier<T> not) async => Data(data: await fetch(not));
+    FutureOr<Result<T>> fetchResult(ResultNotifier<T> not) async =>
+        Data(data: await fetch(not));
     return (not) => (not as FutureNotifier<T>).performFetch(fetchResult);
   }
 
-  static void Function(ResultNotifier<T>) _onFetchResult<T>(FetchResultAsync<T> fetch) {
+  static void Function(ResultNotifier<T>) _onFetchResult<T>(
+      FetchResultAsync<T> fetch) {
     return (not) => (not as FutureNotifier<T>).performFetch(fetch);
   }
 
@@ -103,7 +106,8 @@ typedef FetchStream<T> = Stream<T> Function(StreamNotifier<T> notifier);
 ///
 /// Use this fetcher function with the [StreamNotifier.result] constructor, when you need to control the result type in
 /// the fetch operation.
-typedef FetchResultStream<T> = Stream<Result<T>> Function(StreamNotifier<T> notifier);
+typedef FetchResultStream<T> = Stream<Result<T>> Function(
+    StreamNotifier<T> notifier);
 
 /// ResultNotifier subclass that supports fetching streaming data.
 ///
@@ -159,11 +163,13 @@ class StreamNotifier<T> extends ResultNotifier<T> {
   });
 
   static void Function(ResultNotifier<T>) _onFetch<T>(FetchStream<T> fetch) {
-    Stream<Result<T>> fetchResult(StreamNotifier<T> not) => fetch(not).map((event) => Data(data: event));
+    Stream<Result<T>> fetchResult(StreamNotifier<T> not) =>
+        fetch(not).map((event) => Data(data: event));
     return (not) => (not as StreamNotifier<T>).performFetch(fetchResult);
   }
 
-  static void Function(ResultNotifier<T>) _onFetchResult<T>(FetchResultStream<T> fetch) {
+  static void Function(ResultNotifier<T>) _onFetchResult<T>(
+      FetchResultStream<T> fetch) {
     return (not) => (not as StreamNotifier<T>).performFetch(fetch);
   }
 
@@ -196,7 +202,8 @@ class StreamNotifier<T> extends ResultNotifier<T> {
     _subscription?.cancel();
     toLoading();
 
-    late final StreamSubscription<Result<T>> sub; // ignore: cancel_subscriptions
+    late final StreamSubscription<Result<T>>
+        sub; // ignore: cancel_subscriptions
     sub = fetch(this).listen(
       (streamResult) {
         if (sub == _subscription && isActive) {

@@ -18,7 +18,8 @@ final activityRepository = ResultNotifier<String>.future(
     // ignore: avoid_print
     print('Fetching for random activity');
     await Future.delayed(const Duration(milliseconds: 500)); // Dramatic Pause
-    final response = await http.get(Uri.parse('https://www.boredapi.com/api/activity/'));
+    final response =
+        await http.get(Uri.parse('https://www.boredapi.com/api/activity/'));
     final json = jsonDecode(response.body) as Map<String, dynamic>;
     return json['activity'] as String;
   },
@@ -42,7 +43,8 @@ class WatcherResultNotifierExampleApp extends StatelessWidget {
       /// Here we use ResourceProvider to provide a local ResultNotifier for the ActivityPage.
       home: ResourceProvider(
         create: (_) => ResultNotifier(data: true),
-        builder: (context, iDidItEnabled) => ActivityPage(iDidItEnabled: iDidItEnabled),
+        builder: (context, iDidItEnabled) =>
+            ActivityPage(iDidItEnabled: iDidItEnabled),
       ),
     );
   }
@@ -58,11 +60,13 @@ class ActivityPage extends WatcherWidget {
   Widget build(WatcherContext context) {
     final activity = activityRepository.watch(context);
     final counter = experiencePoints.watch(context);
-    final iDidItButtonEnabled = iDidItEnabled.watch(context).data == true && !activity.isLoading;
+    final iDidItButtonEnabled =
+        iDidItEnabled.watch(context).data == true && !activity.isLoading;
 
     /// Here we combine the data from the two notifiers, using the `combine` (or `combineData`) extension method defined
     /// in `ResultTuple` (there is also `ResultTriple` etc).
-    final result = (activity, counter).combine((a, b) => '$a - total experience points: $b');
+    final result = (activity, counter)
+        .combine((a, b) => '$a - total experience points: $b');
 
     /// You can also use similar functionality exposed as extension methods on Iterable:
     // final result = [activity, counter].combine((data) => '${data[0]} - count: ${data[1]}');

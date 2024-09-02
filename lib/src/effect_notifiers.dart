@@ -24,7 +24,8 @@ typedef CombineResult<S, R> = Result<R> Function(Iterable<Result<S>> data);
 /// - [ResultListenableIterableEffects] which provides similar functionality for [Iterable]s of [ResultListenable]s.
 /// - [ResultTuple] which provides similar functionality for tuples of [Result]s.
 /// - [ResultListenableTuple] which provides similar functionality for tuples of [ResultListenable]s.
-class CombineLatestNotifier<S, R> extends ResultNotifier<R> with EffectNotifier<S, R> {
+class CombineLatestNotifier<S, R> extends ResultNotifier<R>
+    with EffectNotifier<S, R> {
   // TODO: More docs
 
   /// Constructs a [CombineLatestNotifier] that combines the data from the provided source `notifiers`, using the
@@ -84,14 +85,16 @@ class CombineLatestNotifier<S, R> extends ResultNotifier<R> with EffectNotifier<
     }
   }
 
-  static ResultNotifierCallback<R> _effect<S, R>(Iterable<ResultListenable<S>> sources, Combine<S, R> combineData) {
+  static ResultNotifierCallback<R> _effect<S, R>(
+      Iterable<ResultListenable<S>> sources, Combine<S, R> combineData) {
     return (not) {
       not.value = sources.combine(combineData);
     };
   }
 
   static ResultNotifierCallback<R> _resultEffect<S, R>(
-      Iterable<ResultListenable<S>> sources, CombineResult<S, R> combineResult) {
+      Iterable<ResultListenable<S>> sources,
+      CombineResult<S, R> combineResult) {
     return (not) {
       not.value = combineResult(sources.map((not) => not.value));
     };
@@ -146,7 +149,8 @@ class CombineLatestNotifier<S, R> extends ResultNotifier<R> with EffectNotifier<
   }) {
     return CombineLatestNotifier<dynamic, R>(
       [notifierA, notifierB, notifierC],
-      combineData: (data) => combineData(data[0] as A, data[1] as B, data[2] as C),
+      combineData: (data) =>
+          combineData(data[0] as A, data[1] as B, data[2] as C),
       data: data,
       result: result,
       expiration: expiration,
@@ -177,7 +181,8 @@ class CombineLatestNotifier<S, R> extends ResultNotifier<R> with EffectNotifier<
   }) {
     return CombineLatestNotifier<dynamic, R>(
       [notifierA, notifierB, notifierC, notifierD],
-      combineData: (data) => combineData(data[0] as A, data[1] as B, data[2] as C, data[3] as D),
+      combineData: (data) =>
+          combineData(data[0] as A, data[1] as B, data[2] as C, data[3] as D),
       data: data,
       result: result,
       expiration: expiration,
@@ -209,7 +214,8 @@ class CombineLatestNotifier<S, R> extends ResultNotifier<R> with EffectNotifier<
   }) {
     return CombineLatestNotifier<dynamic, R>(
       [notifierA, notifierB, notifierC, notifierD, notifierE],
-      combineData: (data) => combineData(data[0] as A, data[1] as B, data[2] as C, data[3] as D, data[4] as E),
+      combineData: (data) => combineData(
+          data[0] as A, data[1] as B, data[2] as C, data[3] as D, data[4] as E),
       data: data,
       result: result,
       expiration: expiration,
@@ -270,7 +276,8 @@ mixin EffectNotifier<S, R> on ResultNotifier<R> {
     }
   }
 
-  void _withSourceData(ResultListenable<S> source, void Function(S sourceData) dataEffect) {
+  void _withSourceData(
+      ResultListenable<S> source, void Function(S sourceData) dataEffect) {
     if (source.value case final Data<S> d) {
       dataEffect(d.data);
     }
@@ -283,7 +290,8 @@ typedef Effect<S, R> = R Function(SyncEffectNotifier<S, R> notifier, S input);
 
 /// Signature for functions used by [SyncEffectNotifier] to execute an action that returns a [Result], using the data of
 /// a source [ResultNotifier] as input.
-typedef ResultEffect<S, R> = Result<R> Function(SyncEffectNotifier<S, R> notifier, S input);
+typedef ResultEffect<S, R> = Result<R> Function(
+    SyncEffectNotifier<S, R> notifier, S input);
 
 /// Result notifier that executes an "effect" whenever a source [ResultNotifier] changes value.
 ///
@@ -291,7 +299,8 @@ typedef ResultEffect<S, R> = Result<R> Function(SyncEffectNotifier<S, R> notifie
 /// of the source notifier will be passed as input to the effect function.
 ///
 /// See also [AsyncEffectNotifier].
-class SyncEffectNotifier<S, R> extends ResultNotifier<R> with EffectNotifier<S, R> {
+class SyncEffectNotifier<S, R> extends ResultNotifier<R>
+    with EffectNotifier<S, R> {
   // TODO: More docs
 
   /// Creates a SyncEffectNotifier.
@@ -342,7 +351,8 @@ class SyncEffectNotifier<S, R> extends ResultNotifier<R> with EffectNotifier<S, 
     _dependOnSource(source);
   }
 
-  static ResultNotifierCallback<R> _runEffect<S, R>(ResultListenable<S> source, Effect<S, R> effect) {
+  static ResultNotifierCallback<R> _runEffect<S, R>(
+      ResultListenable<S> source, Effect<S, R> effect) {
     return (not) {
       (not as SyncEffectNotifier<S, R>)._withSourceData(source, (sourceData) {
         not.data = effect(not, sourceData);
@@ -350,7 +360,8 @@ class SyncEffectNotifier<S, R> extends ResultNotifier<R> with EffectNotifier<S, 
     };
   }
 
-  static ResultNotifierCallback<R> _runResultEffect<S, R>(ResultListenable<S> source, ResultEffect<S, R> effect) {
+  static ResultNotifierCallback<R> _runResultEffect<S, R>(
+      ResultListenable<S> source, ResultEffect<S, R> effect) {
     return (not) {
       (not as SyncEffectNotifier<S, R>)._withSourceData(source, (sourceData) {
         not.value = effect(not, sourceData);
@@ -364,11 +375,13 @@ class SyncEffectNotifier<S, R> extends ResultNotifier<R> with EffectNotifier<S, 
 
 /// Signature for functions used by [AsyncEffectNotifier] to execute an action that returns data Future, using the data
 /// of a source [ResultNotifier] as input.
-typedef AsyncEffect<S, R> = Future<R> Function(ResultNotifier<R> notifier, S input);
+typedef AsyncEffect<S, R> = Future<R> Function(
+    ResultNotifier<R> notifier, S input);
 
 /// Signature for functions used by [AsyncEffectNotifier] to execute an action that returns a [Result] Future, using the
 /// data of a source [ResultNotifier] as input.
-typedef AsyncResultEffect<S, R> = Future<Result<R>> Function(ResultNotifier<R> notifier, S input);
+typedef AsyncResultEffect<S, R> = Future<Result<R>> Function(
+    ResultNotifier<R> notifier, S input);
 
 /// Result notifier that executes an "effect" asynchronously whenever a source [ResultNotifier] changes value.
 ///
@@ -376,7 +389,8 @@ typedef AsyncResultEffect<S, R> = Future<Result<R>> Function(ResultNotifier<R> n
 /// of the source notifier will be passed as input to the effect function.
 ///
 /// See also [SyncEffectNotifier].
-class AsyncEffectNotifier<S, R> extends FutureNotifier<R> with EffectNotifier<S, R> {
+class AsyncEffectNotifier<S, R> extends FutureNotifier<R>
+    with EffectNotifier<S, R> {
   // TODO: More docs
 
   /// Creates a AsyncEffectNotifier.
@@ -427,10 +441,12 @@ class AsyncEffectNotifier<S, R> extends FutureNotifier<R> with EffectNotifier<S,
     _dependOnSource(source);
   }
 
-  static ResultNotifierCallback<R> _asyncEffect<S, R>(ResultListenable<S> source, AsyncEffect<S, R> effect) {
+  static ResultNotifierCallback<R> _asyncEffect<S, R>(
+      ResultListenable<S> source, AsyncEffect<S, R> effect) {
     return (not) {
       (not as AsyncEffectNotifier<S, R>)._withSourceData(source, (sourceData) {
-        not.performFetch((not) async => Data(data: await effect(not, sourceData)));
+        not.performFetch(
+            (not) async => Data(data: await effect(not, sourceData)));
       });
     };
   }
@@ -450,18 +466,21 @@ class AsyncEffectNotifier<S, R> extends FutureNotifier<R> with EffectNotifier<S,
 
 /// Signature for functions used by [StreamEffectNotifier] to execute an action that returns data Stream, using the data
 /// of a source [ResultNotifier] as input.
-typedef StreamEffect<S, R> = Stream<R> Function(ResultNotifier<R> notifier, S input);
+typedef StreamEffect<S, R> = Stream<R> Function(
+    ResultNotifier<R> notifier, S input);
 
 /// Signature for functions used by [StreamEffectNotifier] to execute an action that returns a [Result] Stream, using
 /// the data of a source [ResultNotifier] as input.
-typedef ResultStreamEffect<S, R> = Stream<Result<R>> Function(ResultNotifier<R> notifier, S input);
+typedef ResultStreamEffect<S, R> = Stream<Result<R>> Function(
+    ResultNotifier<R> notifier, S input);
 
 /// Result notifier that executes an "effect" that returns a Stream, whenever a source [ResultNotifier] changes value.
 ///
 /// The provided [effect] function is executed whenever the source notifier produces new data. The data of the source
 /// notifier will be passed as input to the effect function, returning a new Stream or data. The notifier will then
 /// subscribe to that Stream and update its value whenever new data or errors are emitted.
-class StreamEffectNotifier<S, R> extends StreamNotifier<R> with EffectNotifier<S, R> {
+class StreamEffectNotifier<S, R> extends StreamNotifier<R>
+    with EffectNotifier<S, R> {
   // TODO: More docs
 
   /// Creates a StreamEffectNotifier.
@@ -512,15 +531,18 @@ class StreamEffectNotifier<S, R> extends StreamNotifier<R> with EffectNotifier<S
     _dependOnSource(source);
   }
 
-  static ResultNotifierCallback<R> _effect<S, R>(ResultListenable<S> source, StreamEffect<S, R> effect) {
+  static ResultNotifierCallback<R> _effect<S, R>(
+      ResultListenable<S> source, StreamEffect<S, R> effect) {
     return (not) {
       (not as StreamEffectNotifier<S, R>)._withSourceData(source, (sourceData) {
-        not.performFetch((not) => effect(not, sourceData).map((event) => Data(data: event)));
+        not.performFetch(
+            (not) => effect(not, sourceData).map((event) => Data(data: event)));
       });
     };
   }
 
-  static ResultNotifierCallback<R> _resultEffect<S, R>(ResultListenable<S> source, ResultStreamEffect<S, R> effect) {
+  static ResultNotifierCallback<R> _resultEffect<S, R>(
+      ResultListenable<S> source, ResultStreamEffect<S, R> effect) {
     return (not) {
       (not as StreamEffectNotifier<S, R>)._withSourceData(source, (sourceData) {
         not.performFetch((not) => effect(not, sourceData));
